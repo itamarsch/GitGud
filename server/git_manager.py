@@ -1,7 +1,6 @@
 import typing
 import git
 
-
 conf_file_path = "conf/gitolite.conf"
 
 
@@ -30,7 +29,7 @@ class GitManager:
         with open(f"{self.path}/{conf_file_path}", "a") as conf_file:
             conf_file.write(
                 f"""
-repo {repo_name}
+repo {user}/{repo_name}
     RW+     =   {user}
 """
             )
@@ -44,4 +43,5 @@ repo {repo_name}
 
 if __name__ == "__main__":
     gm = GitManager("../gitolite-admin")
-    gm.create_repo("TestRepo", "itamarsch", True)
+    # gm.change_visibility("TestRepo", False)
+    gm.create_repo("itamarsch/GitGud", "itamarsch", True)
