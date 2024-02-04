@@ -31,12 +31,12 @@ class EncryptionState:
         self.encryption_key = None
         self.fernet: Fernet
 
-    def set_encryption_key(self, server_mixed_key: int):
+    def set_encryption_key(self, server_mixed_key_bytes: int):
         """
         Set S value on server based on client mixed key
         """
         self.encryption_key = diffie_helman(
-            self.secret_key, server_mixed_key, cast(int, self.p)
+            self.secret_key, server_mixed_key_bytes, cast(int, self.p)
         )
         key = base64.urlsafe_b64encode(
             self.encryption_key.to_bytes(32, byteorder="big")

@@ -1,3 +1,4 @@
+import json
 import socket
 from threading import Thread
 from typing import Dict, List, Tuple
@@ -9,6 +10,8 @@ import compress
 
 encryption_length_size = 3
 regular_length_size = 4
+file_token_length_size = 3
+file_length_size = 9
 
 
 def decompress_bytes(data: bytes) -> str:
@@ -17,6 +20,10 @@ def decompress_bytes(data: bytes) -> str:
 
 def compress_str(data: str) -> bytes:
     return compress.compress_str_to_bytes(compress.Algorithm.gzip, data)
+
+
+def compress_bytes(data: bytes) -> bytes:
+    return compress.compress_bytes_to_bytes(compress.Algorithm.gzip, data)
 
 
 def recv(soc: socket.socket, length_size: int) -> bytes:
@@ -29,9 +36,46 @@ def send(soc: socket.socket, data: bytes, length_size: int):
     soc.send(length_bytes + data)
 
 
+class FileComm:
+    def __init__(self, port: int, data: bytes, token: str):
+        self.port = port
+        self.data = data
+        self.token = token
+
+    def start_listeneing(self):
+        thread = Thread(target=self._listen)
+        thread.start()
+
+    def _listen(self):
+        soc = socket.socket()
+        soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        soc.bind(("127.0.0.1", self.port))
+        soc.listen(1)
+        encryption = EncryptionState()
+
+        (client, _) = soc.accept()
+
+        send(client, encryption.get_initial_public_message(), encryption_length_size)
+        encryption_response = recv(client, encryption_length_size)
+        encryption.set_encryption_key(encryption_response)
+
+        token_encrypted = recv(client, file_token_length_size)
+        token = encryption.decrypt(token_encrypted).decode()
+
+        if token == self.token:
+            data_compressed = compress_bytes(self.data)
+            data_encrypted = encryption.encrypt(data_compressed)
+            send(client, data_encrypted, file_length_size)
+
+        client.close()
+        soc.close()
+        del soc
+
+
 class ServerComm:
     def __init__(self) -> None:
         self.server_socket = socket.socket()
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.open_sockets: Dict[
             Tuple[str, int], Tuple[socket.socket, EncryptionState]
         ] = {}
@@ -47,7 +91,7 @@ class ServerComm:
         )
 
     def _listen(self, port: int):
-        self.server_socket.bind(("0.0.0.0", port))
+        self.server_socket.bind(("127.0.0.1", port))
         self.server_socket.listen(4)
         while self.running:
             current_sockets = [conn[0] for conn in self.open_sockets.values()]
@@ -93,16 +137,14 @@ class ServerComm:
 
     def _on_receive_encryption(self, soc: socket.socket, addr: Tuple[str, int]):
         encryption_response_bytes = recv(soc, encryption_length_size)
-        client_mixed_key = int(encryption_response_bytes.decode())
-        self.open_sockets[addr][1].set_encryption_key(client_mixed_key)
+        self.open_sockets[addr][1].set_encryption_key(encryption_response_bytes)
 
     def _new_client(self, soc: socket.socket, addr: Tuple[str, int]):
         encryption = EncryptionState()
         self.open_sockets[addr] = (soc, encryption)
 
-        msg = encryption.get_initial_public_message()
-        length = str(len(msg)).zfill(encryption_length_size)
-        soc.send(f"{length}{msg}".encode())
+        encryption_initial_message = encryption.get_initial_public_message()
+        send(soc, encryption_initial_message, encryption_length_size)
 
     def start_listeneing(self, port: int):
         self.running = True
@@ -112,8 +154,13 @@ class ServerComm:
 
 if __name__ == "__main__":
     comm = ServerComm()
-    comm.start_listeneing(3000)
+    comm.start_listeneing(10001)
     while True:
         (msg, addr) = comm.logic_queue.get()
-        comm.send_and_close(addr, "Bye bye")
-        print(msg)
+        port = 20000
+        token = "Itamar"
+        json_encoded = json.dumps({"port": port, "token": token})
+
+        with open("./large-file.json", "rb") as f:
+            FileComm(port, f.read(), token).start_listeneing()
+        comm.send_and_close(addr, json_encoded)

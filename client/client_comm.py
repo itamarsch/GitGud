@@ -1,15 +1,22 @@
 import socket
 from typing import Optional, Tuple, cast
 import compress
+import json
 from encryption import EncryptionState
 
 
 encryption_length_size = 3
 regular_length_size = 4
+file_token_length_size = 3
+file_length_size = 9
 
 
-def decompress_bytes(data: bytes) -> str:
+def decompress_bytes_to_str(data: bytes) -> str:
     return compress.decompress_bytes_to_str(compress.Algorithm.gzip, data)
+
+
+def decompress_bytes_to_bytes(data: bytes) -> bytes:
+    return compress.decompress_bytes_to_bytes(compress.Algorithm.gzip, data)
 
 
 def compress_str(data: str) -> bytes:
@@ -19,6 +26,16 @@ def compress_str(data: str) -> bytes:
 def recv(soc: socket.socket, length_size: int) -> bytes:
     length_of_data = int(soc.recv(length_size).decode())
     return soc.recv(length_of_data)
+
+
+def recv_file(soc: socket.socket, length_size: int) -> bytes:
+    length_of_data = int(soc.recv(length_size).decode())
+    data = bytes()
+    while length_of_data > 0:
+        new_data = soc.recv(1024)
+        length_of_data -= len(new_data)
+        data += new_data
+    return data
 
 
 def send(soc: socket.socket, data: bytes, length_size: int):
@@ -49,9 +66,31 @@ class ClientComm:
         encrypted_data = encryption.encrypt(compressed_data)
         send(soc, encrypted_data, regular_length_size)
 
-        return decompress_bytes(encryption.decrypt(recv(soc, regular_length_size)))
+        response = recv(soc, regular_length_size)
+
+        soc.close()
+        return decompress_bytes_to_str(encryption.decrypt(response))
+
+    def file_request(self, token: str, port: int) -> bytes:
+        soc = socket.socket()
+        soc.connect((self.ip[0], port))
+
+        self._exchange_keys(soc)
+        encryption = cast(EncryptionState, self.encryption)
+        send(soc, encryption.encrypt(token.encode()), file_token_length_size)
+        file = recv_file(soc, file_length_size)
+
+        soc.close()
+        return decompress_bytes_to_bytes(encryption.decrypt(file))
 
 
 if __name__ == "__main__":
-    client = ClientComm(("127.0.0.1", 3000))
-    print(client.run_request("Hello"))
+    client = ClientComm(("127.0.0.1", 10001))
+    file_res = client.run_request("Hello")
+    parsed_json = json.loads(file_res)
+    token = parsed_json["token"]
+    port = parsed_json["port"]
+
+    content = client.file_request(token, port)
+    with open("large-file-test.json", "wb+") as f:
+        f.write(content)

@@ -32,21 +32,23 @@ class EncryptionState:
         self.secret_key = random.randint(0, 1000)
         self.encryption_key = None
 
-    def set_encryption_key(self, client_mixed_key: int):
+    def set_encryption_key(self, client_mixed_key_response_bytes: bytes):
         """
+        :client_mixed_key: Response of encryption key in bytes
         Set S value on server based on client mixed key
         """
+        client_mixed_key = int(client_mixed_key_response_bytes.decode())
         self.encryption_key = diffie_helman(self.secret_key, client_mixed_key, global_p)
         key = base64.urlsafe_b64encode(
             self.encryption_key.to_bytes(32, byteorder="big")
         )
         self.fernet = Fernet(key)
 
-    def get_initial_public_message(self):
+    def get_initial_public_message(self) -> bytes:
         """
         Get initial message to send to client
         """
-        return f"{self.get_mixed_key()};{global_p};{global_g}"
+        return f"{self.get_mixed_key()};{global_p};{global_g}".encode()
 
     def finished_encryption(self) -> bool:
         """
