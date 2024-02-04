@@ -7,7 +7,7 @@ import select
 import compress
 
 
-encyption_length_size = 3
+encryption_length_size = 3
 regular_length_size = 4
 
 
@@ -92,7 +92,7 @@ class ServerComm:
         self.logic_queue.put((data_decompressed, addr))
 
     def _on_receive_encryption(self, soc: socket.socket, addr: Tuple[str, int]):
-        encryption_response_bytes = recv(soc, encyption_length_size)
+        encryption_response_bytes = recv(soc, encryption_length_size)
         client_mixed_key = int(encryption_response_bytes.decode())
         self.open_sockets[addr][1].set_encryption_key(client_mixed_key)
 
@@ -101,7 +101,7 @@ class ServerComm:
         self.open_sockets[addr] = (soc, encryption)
 
         msg = encryption.get_initial_public_message()
-        length = str(len(msg)).zfill(encyption_length_size)
+        length = str(len(msg)).zfill(encryption_length_size)
         soc.send(f"{length}{msg}".encode())
 
     def start_listeneing(self, port: int):

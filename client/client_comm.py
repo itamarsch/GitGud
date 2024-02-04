@@ -4,7 +4,7 @@ import compress
 from encryption import EncryptionState
 
 
-encyption_length_size = 3
+encryption_length_size = 3
 regular_length_size = 4
 
 
@@ -33,11 +33,11 @@ class ClientComm:
 
     def _exchange_keys(self, soc: socket.socket):
         self.encryption = EncryptionState()
-        initial_encryption_data = recv(soc, encyption_length_size).decode()
+        initial_encryption_data = recv(soc, encryption_length_size).decode()
         self.encryption.parse_initial_message(initial_encryption_data)
 
         mixed_client_key = str(self.encryption.get_mixed_key()).encode()
-        send(soc, mixed_client_key, encyption_length_size)
+        send(soc, mixed_client_key, encryption_length_size)
 
     def run_request(self, data: str) -> str:
         soc = socket.socket()
