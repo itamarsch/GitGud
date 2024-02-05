@@ -6,6 +6,7 @@ from queue import Queue
 from encryption import EncryptionState
 import select
 import compress
+from gitgud_types import Address
 
 
 encryption_length_size = 3
@@ -73,16 +74,14 @@ class FileComm:
 
 
 class ServerComm:
-    def __init__(self) -> None:
+    def __init__(self, queue: Queue[Tuple[str, Address]]) -> None:
         self.server_socket = socket.socket()
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.open_sockets: Dict[
-            Tuple[str, int], Tuple[socket.socket, EncryptionState]
-        ] = {}
-        self.logic_queue: Queue[Tuple[str, Tuple[str, int]]] = Queue()
+        self.open_sockets: Dict[Address, Tuple[socket.socket, EncryptionState]] = {}
+        self.logic_queue = queue
         self.running = False
 
-    def _get_addr_of_socket(self, soc: socket.socket) -> Tuple[str, int]:
+    def _get_addr_of_socket(self, soc: socket.socket) -> Address:
         for k, v in self.open_sockets.items():
             if v[0] is soc:
                 return k
@@ -101,7 +100,7 @@ class ServerComm:
             )
             self._read_sockets(rlist)
 
-    def _disconnect_client(self, addr: Tuple[str, int]):
+    def _disconnect_client(self, addr: Address):
         soc = self.open_sockets[addr]
         del self.open_sockets[addr]
         soc[0].close()
@@ -123,23 +122,23 @@ class ServerComm:
 
                     self._disconnect_client(addr)
 
-    def send_and_close(self, adr: Tuple[str, int], data: str):
+    def send_and_close(self, adr: Address, data: str):
         (soc, encyption) = self.open_sockets[adr]
         data_to_send = encyption.encrypt(compress_str(data))
         send(soc, data_to_send, regular_length_size)
         self._disconnect_client(adr)
 
-    def _on_message_receive(self, soc: socket.socket, addr: Tuple[str, int]):
+    def _on_message_receive(self, soc: socket.socket, addr: Address):
         data_bytes = recv(soc, regular_length_size)
         data_decrypted = self.open_sockets[addr][1].decrypt(data_bytes)
         data_decompressed = decompress_bytes(data_decrypted)
         self.logic_queue.put((data_decompressed, addr))
 
-    def _on_receive_encryption(self, soc: socket.socket, addr: Tuple[str, int]):
+    def _on_receive_encryption(self, soc: socket.socket, addr: Address):
         encryption_response_bytes = recv(soc, encryption_length_size)
         self.open_sockets[addr][1].set_encryption_key(encryption_response_bytes)
 
-    def _new_client(self, soc: socket.socket, addr: Tuple[str, int]):
+    def _new_client(self, soc: socket.socket, addr: Address):
         encryption = EncryptionState()
         self.open_sockets[addr] = (soc, encryption)
 
@@ -153,7 +152,8 @@ class ServerComm:
 
 
 if __name__ == "__main__":
-    comm = ServerComm()
+    queue = Queue()
+    comm = ServerComm(queue)
     comm.start_listeneing(10001)
     while True:
         (msg, addr) = comm.logic_queue.get()

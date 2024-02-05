@@ -1,5 +1,5 @@
 import socket
-from typing import Optional, Tuple, cast
+from typing import Tuple
 import compress
 import json
 from encryption import EncryptionState
@@ -46,23 +46,22 @@ def send(soc: socket.socket, data: bytes, length_size: int):
 class ClientComm:
     def __init__(self, addr: Tuple[str, int]) -> None:
         self.ip = addr
-        self.encryption: Optional[EncryptionState] = None
 
-    def _exchange_keys(self, soc: socket.socket):
-        self.encryption = EncryptionState()
+    def _exchange_keys(self, soc: socket.socket) -> EncryptionState:
+        encryption = EncryptionState()
         initial_encryption_data = recv(soc, encryption_length_size).decode()
-        self.encryption.parse_initial_message(initial_encryption_data)
+        encryption.parse_initial_message(initial_encryption_data)
 
-        mixed_client_key = str(self.encryption.get_mixed_key()).encode()
+        mixed_client_key = str(encryption.get_mixed_key()).encode()
         send(soc, mixed_client_key, encryption_length_size)
+        return encryption
 
     def run_request(self, data: str) -> str:
         soc = socket.socket()
         soc.connect(self.ip)
 
-        self._exchange_keys(soc)
+        encryption = self._exchange_keys(soc)
         compressed_data = compress_str(data)
-        encryption = cast(EncryptionState, self.encryption)
         encrypted_data = encryption.encrypt(compressed_data)
         send(soc, encrypted_data, regular_length_size)
 
@@ -75,8 +74,7 @@ class ClientComm:
         soc = socket.socket()
         soc.connect((self.ip[0], port))
 
-        self._exchange_keys(soc)
-        encryption = cast(EncryptionState, self.encryption)
+        encryption = self._exchange_keys(soc)
         send(soc, encryption.encrypt(token.encode()), file_token_length_size)
         file = recv_file(soc, file_length_size)
 
@@ -85,12 +83,10 @@ class ClientComm:
 
 
 if __name__ == "__main__":
-    client = ClientComm(("127.0.0.1", 10001))
-    file_res = client.run_request("Hello")
-    parsed_json = json.loads(file_res)
-    token = parsed_json["token"]
-    port = parsed_json["port"]
-
-    content = client.file_request(token, port)
-    with open("large-file-test.json", "wb+") as f:
-        f.write(content)
+    client = ClientComm(("127.0.0.1", 30000))
+    file_res = client.run_request(
+        json.dumps(
+            {"type": "register", "username": "hello", "password": "hi", "sshKey": "Hey"}
+        )
+    )
+    print(file_res)
