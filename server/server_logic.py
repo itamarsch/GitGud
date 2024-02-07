@@ -5,7 +5,8 @@ from git_manager import GitManager
 from queue import Queue
 from server_protocol import unpack
 from server_comm import ServerComm
-from gitgud_types import Json, Address
+from gitgud_types import Action, Json, Address
+from secrets import token_urlsafe
 
 
 class ServerLogic:
@@ -28,6 +29,8 @@ class ServerLogic:
             response = self.apply_action(json_request)
         except ValueError as e:
             response = {"error": str(e)}
+        except Exception as e:
+            response = {"error": f"Internal Server error {e}"}
 
         self.server_comm.send_and_close(addr, json.dumps(response))
 
@@ -37,16 +40,26 @@ class ServerLogic:
         if request_type not in self.actions:
             return {"error": "Invalid type"}
 
-        return self.actions[request_type](json)
+        (action, required_keys) = self.actions[request_type]
+        if not all(required_key in json for required_key in required_keys):
+            return {"error": "Invalid keys in request"}
+        return action(json)
 
-    def get_actions(self) -> Dict[str, Callable[[Json], Json]]:
-        return {"register": self.register}
+    def get_actions(self) -> Dict[str, Tuple[Action, List[str]]]:
+        return {"register": (self.register, ["username", "password", "sshKey"])}
 
     def register(self, request: Json) -> Json:
-        required_keys = ["username", "password", "sshKey"]
-        if not all(required_key in request for required_key in required_keys):
-            return {"error": "Invalid request"}
         username = request["username"]
         password_hash = request["password"]
         ssh_key = request["sshKey"]
-        return {"connectionToken": ""}
+        if self.db.user_exists(username):
+            return {"error": "User exists"}
+
+        id = self.db.add_user(username, password_hash)
+        print(id)
+        self.git_manager.add_ssh_key(username, ssh_key)
+
+        token = token_urlsafe(32)
+        self.connected_client[token] = id
+
+        return {"connectionToken": token}

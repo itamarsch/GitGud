@@ -36,16 +36,21 @@ class DB:
             return None
         return repo_id_res[0]
 
-    def add_user(self, username: str, password_hash: str):
+    def add_user(self, username: str, password_hash: str) -> int:
+        """
+        :returns: ID of new user
+        """
         curr = self.conn.cursor()
 
         curr.execute(
-            'INSERT INTO "User" (username, password) VALUES (%s, %s)',
+            'INSERT INTO "User" (username, password) VALUES (%s, %s) RETURNING id',
             (username, password_hash),
         )
 
+        id = cast(Tuple[int], curr.fetchone())[0]
         curr.close()
         self.conn.commit()
+        return id
 
     def add_repo(self, user: int, repo_name: str, public: bool):
         curr = self.conn.cursor()
@@ -167,6 +172,16 @@ where repo_id = %s
 
         curr.close()
         self.conn.commit()
+
+    def user_exists(self, username: str) -> bool:
+        curr = self.conn.cursor()
+        curr.execute('SELECT id from "User" where username = %s', (username,))
+
+        user = curr.fetchone()
+
+        curr.close()
+        self.conn.commit()
+        return user is not None
 
     def validate_user(self, username: str, password_hash: str) -> bool:
         curr = self.conn.cursor()
