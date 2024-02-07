@@ -85,10 +85,9 @@ class ClientComm:
 if __name__ == "__main__":
     client = ClientComm(("127.0.0.1", 30000))
     request = {
-        "type": "register",
+        "type": "login",
         "username": "HELL",
         "password": "hi",
-        "sshKey": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIGq2zpYtdWwVTZ9IzNxMlhpUsSG6sJW/AiTX4L7u+Lrd talmid@R211W25",
     }
     file_res = client.run_request(json.dumps(request))
     print(file_res)
