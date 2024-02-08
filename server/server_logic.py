@@ -3,7 +3,13 @@ from typing import Callable, Dict, List, Tuple, Any
 from database import DB
 from git_manager import GitManager
 from queue import Queue
-from server_protocol import pack_error, pack_login, pack_register, unpack
+from server_protocol import (
+    pack_create_repo,
+    pack_error,
+    pack_login,
+    pack_register,
+    unpack,
+)
 from server_comm import ServerComm
 from gitgud_types import Action, Json, Address
 from secrets import token_urlsafe
@@ -43,12 +49,21 @@ class ServerLogic:
         (action, required_keys) = self.actions[request_type]
         if not all(required_key in json for required_key in required_keys):
             return pack_error("Invalid keys in request")
+        if (
+            "connectionToken" in required_keys
+            and json["connectionToken"] not in self.connected_client
+        ):
+            return pack_error("Invalid connection token")
         return action(json)
 
     def get_actions(self) -> Dict[str, Tuple[Action, List[str]]]:
         return {
             "register": (self.register, ["username", "password", "sshKey"]),
             "login": (self.login, ["username", "password"]),
+            "createRepo": (
+                self.create_repo,
+                ["repoName", "visibility", "connectionToken"],
+            ),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -80,3 +95,17 @@ class ServerLogic:
         token = self.generate_new_connection_token(username)
 
         return pack_login(token)
+
+    def create_repo(self, request: Json) -> Json:
+        repo_name = request["repoName"]
+        visibility = request["visibility"]
+        connection_token = request["connectionToken"]
+        username = self.connected_client[connection_token]
+        repo_id = self.db.repo_id_by_name(f"{username}/{repo_name}")
+        if repo_id is not None:
+            return pack_error("Repository already exists")
+
+        self.db.add_repo(username, repo_name, visibility)
+        self.git_manager.create_repo(repo_name, username, visibility)
+
+        return pack_create_repo()

@@ -27,3 +27,7 @@ def pack_register(connection_token: str) -> Json:
 
 def pack_login(connection_token: str) -> Json:
     return {"connectionToken": connection_token}
+
+
+def pack_create_repo() -> Json:
+    return {}

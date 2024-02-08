@@ -3,6 +3,7 @@ from typing import Tuple
 import compress
 import json
 from encryption import EncryptionState
+from gitgud_types import Json
 
 
 encryption_length_size = 3
@@ -56,7 +57,7 @@ class ClientComm:
         send(soc, mixed_client_key, encryption_length_size)
         return encryption
 
-    def run_request(self, data: str) -> str:
+    def run_request(self, data: str) -> Json:
         soc = socket.socket()
         soc.connect(self.ip)
 
@@ -68,7 +69,8 @@ class ClientComm:
         response = recv(soc, regular_length_size)
 
         soc.close()
-        return decompress_bytes_to_str(encryption.decrypt(response))
+        result = decompress_bytes_to_str(encryption.decrypt(response))
+        return json.loads(result)
 
     def file_request(self, token: str, port: int) -> bytes:
         soc = socket.socket()
@@ -91,3 +93,12 @@ if __name__ == "__main__":
     }
     file_res = client.run_request(json.dumps(request))
     print(file_res)
+    connection_token = file_res["connectionToken"]
+
+    create_repo = {
+        "type": "createRepo",
+        "connectionToken": connection_token,
+        "visibility": True,
+        "repoName": "HelloRepo1",
+    }
+    print(client.run_request(json.dumps(create_repo)))
