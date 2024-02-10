@@ -1,4 +1,5 @@
 import json
+from typing import List
 
 from gitgud_types import Json
 
@@ -31,3 +32,11 @@ def pack_login(connection_token: str) -> Json:
 
 def pack_create_repo() -> Json:
     return {}
+
+
+def pack_branches(branches: List[str]) -> Json:
+    return {"branches": branches}
+
+
+def pack_view_file(port: int, token: str) -> Json:
+    return {"port": port, "token": token}

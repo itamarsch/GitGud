@@ -2,3 +2,4 @@ server/.env
 gitolite-admin/
 server/__pycache__
 client/__pycache__
+server/cache/

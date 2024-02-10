@@ -38,23 +38,30 @@ def send(soc: socket.socket, data: bytes, length_size: int):
 
 
 class FileComm:
-    def __init__(self, port: int, data: bytes, token: str):
-        self.port = port
+    def __init__(self, data: bytes, token: str):
         self.data = data
         self.token = token
+        self.running = False
+        self.start_listeneing()
 
     def start_listeneing(self):
         thread = Thread(target=self._listen)
         thread.start()
 
+    def get_port(self) -> int:
+        while not self.running:
+            pass
+        return self.soc.getsockname()[1]
+
     def _listen(self):
-        soc = socket.socket()
-        soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        soc.bind(("127.0.0.1", self.port))
-        soc.listen(1)
+        self.soc = socket.socket()
+        self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.soc.bind(("127.0.0.1", 0))
+        self.soc.listen(1)
+        self.running = True
         encryption = EncryptionState()
 
-        (client, _) = soc.accept()
+        (client, _) = self.soc.accept()
 
         send(client, encryption.get_initial_public_message(), encryption_length_size)
         encryption_response = recv(client, encryption_length_size)
@@ -69,8 +76,8 @@ class FileComm:
             send(client, data_encrypted, file_length_size)
 
         client.close()
-        soc.close()
-        del soc
+        self.soc.close()
+        del self.soc
 
 
 class ServerComm:
@@ -149,18 +156,3 @@ class ServerComm:
         self.running = True
         thread = Thread(target=self._listen, args=(port,))
         thread.start()
-
-
-if __name__ == "__main__":
-    queue = Queue()
-    comm = ServerComm(queue)
-    comm.start_listeneing(10001)
-    while True:
-        (msg, addr) = comm.logic_queue.get()
-        port = 20000
-        token = "Itamar"
-        json_encoded = json.dumps({"port": port, "token": token})
-
-        with open("./large-file.json", "rb") as f:
-            FileComm(port, f.read(), token).start_listeneing()
-        comm.send_and_close(addr, json_encoded)

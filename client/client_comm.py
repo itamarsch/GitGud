@@ -1,4 +1,5 @@
 import socket
+import sys
 from typing import Tuple
 import compress
 import json
@@ -88,17 +89,28 @@ if __name__ == "__main__":
     client = ClientComm(("127.0.0.1", 30000))
     request = {
         "type": "login",
-        "username": "HELL",
-        "password": "hi",
+        "username": "HELLO",
+        "password": "FADFDSDf",
     }
-    file_res = client.run_request(json.dumps(request))
-    print(file_res)
-    connection_token = file_res["connectionToken"]
+    login_res = client.run_request(json.dumps(request))
+    print(login_res)
+    if "error" in login_res:
+        sys.exit(1)
+    connection_token = login_res["connectionToken"]
 
-    create_repo = {
-        "type": "createRepo",
+    view_file = {
+        "type": "viewFile",
         "connectionToken": connection_token,
-        "visibility": True,
-        "repoName": "HelloRepo1",
+        "repo": "HELL/HelloRepo1",
+        "filePath": "../../../.env",
+        "branch": "main",
     }
-    print(client.run_request(json.dumps(create_repo)))
+
+    view_file_res = client.run_request(json.dumps(view_file))
+
+    print(view_file_res)
+    if "error" in view_file_res:
+        sys.exit(1)
+
+    file_res = client.file_request(view_file_res["token"], view_file_res["port"])
+    print(file_res)

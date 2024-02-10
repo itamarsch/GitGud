@@ -1,16 +1,22 @@
 import json
-from typing import Callable, Dict, List, Tuple, Any
+from typing import Dict, List, Optional, Tuple, cast
+
+from gitdb.util import os
 from database import DB
 from git_manager import GitManager
 from queue import Queue
+from repo_clone import RepoClone
 from server_protocol import (
+    pack_branches,
     pack_create_repo,
     pack_error,
     pack_login,
     pack_register,
+    pack_view_file,
     unpack,
 )
-from server_comm import ServerComm
+from git import GitCommandError
+from server_comm import FileComm, ServerComm
 from gitgud_types import Action, Json, Address
 from secrets import token_urlsafe
 
@@ -54,6 +60,7 @@ class ServerLogic:
             and json["connectionToken"] not in self.connected_client
         ):
             return pack_error("Invalid connection token")
+
         return action(json)
 
     def get_actions(self) -> Dict[str, Tuple[Action, List[str]]]:
@@ -64,12 +71,33 @@ class ServerLogic:
                 self.create_repo,
                 ["repoName", "visibility", "connectionToken"],
             ),
+            "branches": (self.branches, ["repo", "connectionToken"]),
+            "viewFile": (
+                self.view_file,
+                ["repo", "connectionToken", "filePath", "branch"],
+            ),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
         token = token_urlsafe(32)
         self.connected_client[token] = username
         return token
+
+    def validate_repo_request(self, repo: str, connectionToken: str) -> Optional[Json]:
+        user_and_repo = repo.split("/")
+        if len(user_and_repo) != 2:
+            return pack_error("Invalid user and repo request")
+
+        sql_repo_data = self.db.repo_by_name(repo)
+        if sql_repo_data is None:
+            return pack_error("Invalid username or repo")
+        username = self.connected_client[connectionToken]
+
+        # You are not owner of repo and repo is not public
+        if username != user_and_repo[0] and not sql_repo_data[2]:
+            return pack_error("Invalid permissions")
+
+        return None
 
     def register(self, request: Json) -> Json:
         username = request["username"]
@@ -101,7 +129,7 @@ class ServerLogic:
         visibility = request["visibility"]
         connection_token = request["connectionToken"]
         username = self.connected_client[connection_token]
-        repo_id = self.db.repo_id_by_name(f"{username}/{repo_name}")
+        repo_id = self.db.repo_by_name(f"{username}/{repo_name}")
         if repo_id is not None:
             return pack_error("Repository already exists")
 
@@ -109,3 +137,42 @@ class ServerLogic:
         self.git_manager.create_repo(repo_name, username, visibility)
 
         return pack_create_repo()
+
+    def branches(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
+        if result is not None:
+            return result
+
+        # Safe to clone, repo exists in database
+        with RepoClone(full_repo_name) as r:
+            branches = [branch.name for branch in r.remote().refs]
+        return pack_branches(branches)
+
+    def view_file(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
+        if result is not None:
+            return result
+        file = request["filePath"]
+        token = token_urlsafe(32)
+        branch = request["branch"]
+
+        # Safe to clone, repo exists in database
+        with RepoClone(full_repo_name) as r:
+            try:
+                r.git.checkout(branch)
+            except GitCommandError:
+                return pack_error("Invalid branch name")
+
+            try:
+                path = os.path.relpath(f"./cache/{full_repo_name}/{file}")
+
+                if not path.startswith(f"cache/{full_repo_name}"):
+                    return pack_error("Path out of repository")
+
+                with open(path, "rb") as f:
+                    file_com = FileComm(f.read(), token)
+                    return pack_view_file(file_com.get_port(), token)
+            except FileNotFoundError:
+                return pack_error("File doesn't exist")

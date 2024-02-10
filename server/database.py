@@ -14,7 +14,7 @@ class DB:
             password=os.getenv("DB_PASSWORD"),
         )
 
-    def repo_id_by_name(self, repo: str) -> Optional[int]:
+    def repo_by_name(self, repo: str) -> Optional[Tuple[int, str, bool]]:
         """
         Returns the repo id according to username and reponame in format "user/repo"
         """
@@ -28,13 +28,13 @@ class DB:
         user_id = user_id_res[0]
 
         curr.execute(
-            'SELECT id from "Repository" where name = %s and user_id = %s',
+            'SELECT id, name, public from "Repository" where name = %s and user_id = %s',
             (repo, user_id),
         )
-        repo_id_res = cast(Optional[Tuple[int]], curr.fetchone())
+        repo_id_res = cast(Optional[Tuple[int, str, bool]], curr.fetchone())
         if repo_id_res is None:
             return None
-        return repo_id_res[0]
+        return repo_id_res
 
     def add_user(self, username: str, password_hash: str) -> int:
         """
