@@ -1,6 +1,7 @@
 import json
+from os.path import isdir
 from typing import Dict, List, Optional, Tuple, cast
-
+import datetime
 from gitdb.util import os
 from database import DB
 from git_manager import GitManager
@@ -11,6 +12,7 @@ from server_protocol import (
     pack_create_repo,
     pack_error,
     pack_login,
+    pack_project_dirs,
     pack_register,
     pack_view_file,
     unpack,
@@ -19,6 +21,8 @@ from git import GitCommandError
 from server_comm import FileComm, ServerComm
 from gitgud_types import Action, Json, Address
 from secrets import token_urlsafe
+
+commit_page_size = 30
 
 
 class ServerLogic:
@@ -76,6 +80,11 @@ class ServerLogic:
                 self.view_file,
                 ["repo", "connectionToken", "filePath", "branch"],
             ),
+            "projectDirectory": (
+                self.project_directory,
+                ["directory", "repo", "branch", "connectionToken"],
+            ),
+            "commits": (self.commits, ["repo", "connectionToken", "branch", "page"]),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -158,6 +167,11 @@ class ServerLogic:
         token = token_urlsafe(32)
         branch = request["branch"]
 
+        path = os.path.relpath(f"./cache/{full_repo_name}/{file}")
+
+        if not path.startswith(f"cache/{full_repo_name}"):
+            return pack_error("Path out of repository")
+
         # Safe to clone, repo exists in database
         with RepoClone(full_repo_name) as r:
             try:
@@ -166,13 +180,74 @@ class ServerLogic:
                 return pack_error("Invalid branch name")
 
             try:
-                path = os.path.relpath(f"./cache/{full_repo_name}/{file}")
-
-                if not path.startswith(f"cache/{full_repo_name}"):
-                    return pack_error("Path out of repository")
-
                 with open(path, "rb") as f:
                     file_com = FileComm(f.read(), token)
                     return pack_view_file(file_com.get_port(), token)
             except FileNotFoundError:
                 return pack_error("File doesn't exist")
+
+    def project_directory(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
+        if result is not None:
+            return result
+
+        directory_in_project = request["directory"]
+        branch = request["branch"]
+
+        path = os.path.relpath(f"./cache/{full_repo_name}/{directory_in_project}")
+
+        if not path.startswith(f"cache/{full_repo_name}"):
+            return pack_error("Path out of repository")
+
+        # Safe to clone, repo exists in database
+        with RepoClone(full_repo_name) as r:
+            try:
+                r.git.checkout(branch)
+            except GitCommandError:
+                return pack_error("Invalid branch name")
+
+            if not os.path.isdir(path):
+                return pack_error("Directory doesn't exist")
+
+            try:
+                (_, dirs, files) = next(os.walk(path))
+                if ".git" in dirs:
+                    dirs.remove(".git")
+
+                dirs = map(lambda dir: f"{dir}/", dirs)
+
+                return pack_project_dirs([*dirs, *files])
+
+            except FileNotFoundError:
+                return pack_error("File doesn't exist")
+
+    def commits(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
+        if result is not None:
+            return result
+
+        branch = request["branch"]
+        page = int(request["page"])
+
+        # Safe to clone, repo exists in database
+        with RepoClone(full_repo_name) as r:
+            fifty_first_commits = list(
+                r.iter_commits(
+                    branch, skip=page * commit_page_size, max_count=commit_page_size
+                )
+            )
+            commits_list = []
+            for c in fifty_first_commits:
+                date = datetime.datetime.fromtimestamp(c.authored_date).strftime(
+                    "%Y-%m-%d %H:%M:%S"
+                )
+                authour = str(c.author)
+                hash = c.hexsha
+                message = c.message
+                commits_list.append(
+                    {"date": date, "hash": hash, "message": message, "authour": authour}
+                )
+
+            return {"commits": commits_list}

@@ -93,24 +93,21 @@ if __name__ == "__main__":
         "password": "FADFDSDf",
     }
     login_res = client.run_request(json.dumps(request))
-    print(login_res)
+    # print(login_res)
     if "error" in login_res:
         sys.exit(1)
     connection_token = login_res["connectionToken"]
 
     view_file = {
-        "type": "viewFile",
+        "type": "commits",
         "connectionToken": connection_token,
         "repo": "HELL/HelloRepo1",
-        "filePath": "../../../.env",
         "branch": "main",
+        "page": 0,
     }
 
     view_file_res = client.run_request(json.dumps(view_file))
 
-    print(view_file_res)
+    print(json.dumps(view_file_res))
     if "error" in view_file_res:
         sys.exit(1)
-
-    file_res = client.file_request(view_file_res["token"], view_file_res["port"])
-    print(file_res)
