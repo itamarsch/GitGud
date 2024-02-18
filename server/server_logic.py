@@ -1,6 +1,6 @@
 import json
 from os.path import isdir
-from typing import Dict, List, Optional, Tuple, cast, TypeVar
+from typing import Dict, List, Optional, Tuple, cast, Union
 import datetime
 from git.diff import Diff
 from gitdb.base import OStream
@@ -11,15 +11,18 @@ from queue import Queue
 from repo_clone import RepoClone
 from server_protocol import (
     pack_branches,
+    pack_commit,
     pack_commits,
     pack_create_issue,
     pack_create_repo,
     pack_diff,
     pack_error,
+    pack_issue,
     pack_login,
     pack_project_dirs,
     pack_register,
     pack_view_file,
+    pack_view_issues,
     unpack,
 )
 from git import GitCommandError, IndexObject
@@ -95,6 +98,7 @@ class ServerLogic:
                 self.create_issue,
                 ["repo", "connectionToken", "title", "content"],
             ),
+            "viewIssues": (self.view_issues, ["repo", "connectionToken"]),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -102,7 +106,9 @@ class ServerLogic:
         self.connected_client[token] = username
         return token
 
-    def validate_repo_request(self, repo: str, connectionToken: str) -> Optional[Json]:
+    def validate_repo_request(
+        self, repo: str, connectionToken: str
+    ) -> Union[Json, Tuple[int, str, bool]]:
         user_and_repo = repo.split("/")
         if len(user_and_repo) != 2:
             return pack_error("Invalid user and repo request")
@@ -116,7 +122,7 @@ class ServerLogic:
         if username != user_and_repo[0] and not sql_repo_data[2]:
             return pack_error("Invalid permissions")
 
-        return None
+        return sql_repo_data
 
     def register(self, request: Json) -> Json:
         username = request["username"]
@@ -161,7 +167,7 @@ class ServerLogic:
     def branches(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if result is not None:
+        if result is dict:
             return result
 
         # Safe to clone, repo exists in database
@@ -172,7 +178,7 @@ class ServerLogic:
     def view_file(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if result is not None:
+        if isinstance(result, dict):
             return result
         file = request["filePath"]
         token = token_urlsafe(32)
@@ -200,7 +206,7 @@ class ServerLogic:
     def project_directory(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if result is not None:
+        if isinstance(result, dict):
             return result
 
         directory_in_project = request["directory"]
@@ -236,7 +242,7 @@ class ServerLogic:
     def commits(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if result is not None:
+        if isinstance(result, dict):
             return result
 
         branch = request["branch"]
@@ -256,17 +262,15 @@ class ServerLogic:
                 )
                 authour = str(c.author)
                 hash = c.hexsha
-                message = c.message
-                commits_list.append(
-                    {"date": date, "hash": hash, "message": message, "authour": authour}
-                )
+                message = cast(str, c.message)
+                commits_list.append(pack_commit(date, hash, message, authour))
 
             return pack_commits(commits_list)
 
     def diff(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if result is not None:
+        if isinstance(result, dict):
             return result
 
         with RepoClone(full_repo_name) as r:
@@ -331,22 +335,36 @@ class ServerLogic:
 
     def create_issue(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
-        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if result is not None:
-            return result
+        error_or_repo = self.validate_repo_request(
+            full_repo_name, request["connectionToken"]
+        )
+        if isinstance(error_or_repo, dict):
+            return error_or_repo
         token = request["connectionToken"]
         username = self.connected_client[token]
         user_id = self.db.username_to_id(username)
-
         assert user_id is not None
+
+        repo_id = error_or_repo[0]
+
+        self.db.create_issue(user_id, repo_id, request["title"], request["content"])
+
+        return pack_create_issue()
+
+    def view_issues(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
+        if isinstance(result, dict):
+            return result
 
         repo = self.db.repo_by_name(full_repo_name)
         assert repo is not None
         repo_id = repo[0]
 
-        self.db.create_issue(user_id, repo_id, request["title"], request["content"])
-
-        return pack_create_issue()
+        issues = self.db.issues(repo_id)
+        return pack_view_issues(
+            [pack_issue(issue[1], issue[2], issue[3], issue[0]) for issue in issues]
+        )
 
 
 def make_diff_str(add: bool, diff: str) -> str:

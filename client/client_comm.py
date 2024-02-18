@@ -97,11 +97,9 @@ if __name__ == "__main__":
     connection_token = login_res["connectionToken"]
 
     create_issue = {
-        "type": "createIssue",
+        "type": "viewIssues",
         "connectionToken": connection_token,
         "repo": "HELL/HelloRepo1",
-        "title": "New issue!",
-        "content": "Problem with stuff",
     }
 
     print(client.run_request(json.dumps(create_issue)))

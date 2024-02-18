@@ -84,18 +84,22 @@ class DB:
         curr.close()
         self.conn.commit()
 
-    def issues(self, repo_id: int) -> List[Tuple[int, int, str, str]]:
+    def issues(self, repo_id: int) -> List[Tuple[int, str, str, str]]:
         """
-        Returns all issues for repo in the format id, user_id, title, content
+        Returns all issues for repo in the format id, username, title, content
         """
         curr = self.conn.cursor()
 
         curr.execute(
-            'SELECT id, user_id, title, content from "Issue" where repo_id = %s',
+            """
+SELECT "Issue".id, "User".username, "Issue".title, "Issue".content 
+from "Issue" 
+INNER JOIN "User" on "User".id="Issue".user_id
+where repo_id = %s""",
             (repo_id,),
         )
 
-        return cast(List[Tuple[int, int, str, str]], curr.fetchall())
+        return cast(List[Tuple[int, str, str, str]], curr.fetchall())
 
     def delete_issue(self, issue_id: int):
         curr = self.conn.cursor()

@@ -1,3 +1,4 @@
+from datetime import time
 import json
 from typing import List
 
@@ -46,6 +47,10 @@ def pack_project_dirs(files: List[str]) -> Json:
     return {"files": files}
 
 
+def pack_commit(date: str, hash: str, message: str, authour: str) -> Json:
+    return {"date": date, "hash": hash, "message": message, "authour": authour}
+
+
 def pack_commits(commits: List[Json]) -> Json:
     return {"commits": commits}
 
@@ -56,3 +61,11 @@ def pack_diff(port: int, token: str) -> Json:
 
 def pack_create_issue() -> Json:
     return {}
+
+
+def pack_issue(username: str, title: str, content: str, id: int):
+    return {"username": username, "title": title, "content": content, "id": id}
+
+
+def pack_view_issues(issues: List[Json]) -> Json:
+    return {"issues": issues}
