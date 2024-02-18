@@ -1,7 +1,9 @@
 import json
 from os.path import isdir
-from typing import Dict, List, Optional, Tuple, cast
+from typing import Dict, List, Optional, Tuple, cast, TypeVar
 import datetime
+from git.diff import Diff
+from gitdb.base import OStream
 from gitdb.util import os
 from database import DB
 from git_manager import GitManager
@@ -9,7 +11,9 @@ from queue import Queue
 from repo_clone import RepoClone
 from server_protocol import (
     pack_branches,
+    pack_commits,
     pack_create_repo,
+    pack_diff,
     pack_error,
     pack_login,
     pack_project_dirs,
@@ -17,7 +21,7 @@ from server_protocol import (
     pack_view_file,
     unpack,
 )
-from git import GitCommandError
+from git import GitCommandError, IndexObject
 from server_comm import FileComm, ServerComm
 from gitgud_types import Action, Json, Address
 from secrets import token_urlsafe
@@ -85,6 +89,7 @@ class ServerLogic:
                 ["directory", "repo", "branch", "connectionToken"],
             ),
             "commits": (self.commits, ["repo", "connectionToken", "branch", "page"]),
+            "diff": (self.diff, ["repo", "connectionToken", "hash"]),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -250,4 +255,75 @@ class ServerLogic:
                     {"date": date, "hash": hash, "message": message, "authour": authour}
                 )
 
-            return {"commits": commits_list}
+            return pack_commits(commits_list)
+
+    def diff(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
+        if result is not None:
+            return result
+
+        with RepoClone(full_repo_name) as r:
+            hash = request["hash"]
+            try:
+                commit = r.commit(hash)
+            except Exception:
+                return pack_error("Invalid commit hash")
+
+            diff = commit.parents[0].diff(commit)
+
+            diff_result: List[str] = []
+            for diff_item in diff.iter_change_type("R"):
+                diff_item: Diff
+                diff_result.append(
+                    f"Rename: {diff_item.rename_from} -> {diff_item.rename_to}"
+                )
+            for diff_item in diff.iter_change_type("A"):
+                diff_item: Diff
+                blob = (
+                    cast(IndexObject, diff_item.b_blob)
+                    .data_stream.read()
+                    .decode("utf-8")
+                )
+
+                blob = make_diff_str(True, blob)
+                diff_result.append(f"Added: {diff_item.b_path}\n{blob}")
+
+            for diff_item in diff.iter_change_type("D"):
+                diff_item: Diff
+                blob = (
+                    cast(IndexObject, diff_item.a_blob)
+                    .data_stream.read()
+                    .decode("utf-8")
+                )
+
+                blob = make_diff_str(False, blob)
+                diff_result.append(f"Deleted: {diff_item.a_path}\n{blob}")
+
+            for diff_item in diff.iter_change_type("M"):
+                diff_item: Diff
+
+                b_blob: str = (
+                    cast(IndexObject, diff_item.b_blob)
+                    .data_stream.read()
+                    .decode("utf-8")
+                )
+                a_blob: str = (
+                    cast(IndexObject, diff_item.a_blob)
+                    .data_stream.read()
+                    .decode("utf-8")
+                )
+                b_blob = make_diff_str(True, b_blob)
+                a_blob = make_diff_str(False, a_blob)
+                diff_result.append(
+                    f"Modified: {diff_item.b_path}\n" + b_blob + "\n" + a_blob
+                )
+            full_diff = "\n****************\n".join(diff_result).encode()
+            token = token_urlsafe(32)
+            file_com = FileComm(full_diff, token)
+        return pack_diff(file_com.get_port(), token)
+
+
+def make_diff_str(add: bool, diff: str) -> str:
+    add_remove_str = "++" if add else "--"
+    return "\n".join([f"{add_remove_str}{line}" for line in diff.splitlines()])

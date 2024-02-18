@@ -69,7 +69,6 @@ class ClientComm:
 
         response = recv(soc, regular_length_size)
 
-        soc.close()
         result = decompress_bytes_to_str(encryption.decrypt(response))
         return json.loads(result)
 
@@ -81,7 +80,6 @@ class ClientComm:
         send(soc, encryption.encrypt(token.encode()), file_token_length_size)
         file = recv_file(soc, file_length_size)
 
-        soc.close()
         return decompress_bytes_to_bytes(encryption.decrypt(file))
 
 
@@ -98,7 +96,7 @@ if __name__ == "__main__":
         sys.exit(1)
     connection_token = login_res["connectionToken"]
 
-    view_file = {
+    commits = {
         "type": "commits",
         "connectionToken": connection_token,
         "repo": "HELL/HelloRepo1",
@@ -106,8 +104,20 @@ if __name__ == "__main__":
         "page": 0,
     }
 
-    view_file_res = client.run_request(json.dumps(view_file))
+    commits_res = client.run_request(json.dumps(commits))
+    # print(json.dumps(commits_res))
 
-    print(json.dumps(view_file_res))
-    if "error" in view_file_res:
+    if "error" in commits_res:
         sys.exit(1)
+
+    diff = {
+        "type": "diff",
+        "connectionToken": connection_token,
+        "repo": "HELL/HelloRepo1",
+        "hash": commits_res["commits"][0]["hash"],
+    }
+    diff_res = client.run_request(json.dumps(diff))
+    if "error" in diff_res:
+        print(diff_res)
+        sys.exit(1)
+    print(client.file_request(diff_res["token"], diff_res["port"]).decode())

@@ -44,3 +44,11 @@ def pack_view_file(port: int, token: str) -> Json:
 
 def pack_project_dirs(files: List[str]) -> Json:
     return {"files": files}
+
+
+def pack_commits(commits: List[Json]) -> Json:
+    return {"commits": commits}
+
+
+def pack_diff(port: int, token: str) -> Json:
+    return {"port": port, "token": token}
