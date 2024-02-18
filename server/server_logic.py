@@ -12,6 +12,7 @@ from repo_clone import RepoClone
 from server_protocol import (
     pack_branches,
     pack_commits,
+    pack_create_issue,
     pack_create_repo,
     pack_diff,
     pack_error,
@@ -90,6 +91,10 @@ class ServerLogic:
             ),
             "commits": (self.commits, ["repo", "connectionToken", "branch", "page"]),
             "diff": (self.diff, ["repo", "connectionToken", "hash"]),
+            "createIssue": (
+                self.create_issue,
+                ["repo", "connectionToken", "title", "content"],
+            ),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -146,8 +151,9 @@ class ServerLogic:
         repo_id = self.db.repo_by_name(f"{username}/{repo_name}")
         if repo_id is not None:
             return pack_error("Repository already exists")
+        id = cast(int, self.db.username_to_id(username))
 
-        self.db.add_repo(username, repo_name, visibility)
+        self.db.add_repo(id, repo_name, visibility)
         self.git_manager.create_repo(repo_name, username, visibility)
 
         return pack_create_repo()
@@ -322,6 +328,25 @@ class ServerLogic:
             token = token_urlsafe(32)
             file_com = FileComm(full_diff, token)
         return pack_diff(file_com.get_port(), token)
+
+    def create_issue(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
+        if result is not None:
+            return result
+        token = request["connectionToken"]
+        username = self.connected_client[token]
+        user_id = self.db.username_to_id(username)
+
+        assert user_id is not None
+
+        repo = self.db.repo_by_name(full_repo_name)
+        assert repo is not None
+        repo_id = repo[0]
+
+        self.db.create_issue(user_id, repo_id, request["title"], request["content"])
+
+        return pack_create_issue()
 
 
 def make_diff_str(add: bool, diff: str) -> str:

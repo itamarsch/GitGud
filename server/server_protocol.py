@@ -52,3 +52,7 @@ def pack_commits(commits: List[Json]) -> Json:
 
 def pack_diff(port: int, token: str) -> Json:
     return {"port": port, "token": token}
+
+
+def pack_create_issue() -> Json:
+    return {}

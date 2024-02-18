@@ -52,24 +52,28 @@ class DB:
         self.conn.commit()
         return id
 
-    def add_repo(self, username: str, repo_name: str, public: bool) -> bool:
+    def username_to_id(self, username: str) -> Optional[int]:
         curr = self.conn.cursor()
 
-        curr.execute('SELECT id from "User" where username = %s', (username,))
-        user = curr.fetchone()
-        if user is None:
-            return False
+        curr.execute('SELECT id FROM "User" where username = %s', (username,))
+        id = curr.fetchone()
+        if id is None:
+            return None
+        return id[0]
+
+    def add_repo(self, user_id: int, repo_name: str, public: bool) -> bool:
+        curr = self.conn.cursor()
 
         curr.execute(
             'INSERT INTO "Repository" (user_id, name, public) VALUES (%s, %s, %s)',
-            (user, repo_name, public),
+            (user_id, repo_name, public),
         )
 
         curr.close()
         self.conn.commit()
         return True
 
-    def create_issue(self, user_id: str, repo_id: int, title: str, content: str):
+    def create_issue(self, user_id: int, repo_id: int, title: str, content: str):
         curr = self.conn.cursor()
 
         curr.execute(

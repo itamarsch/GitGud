@@ -96,28 +96,12 @@ if __name__ == "__main__":
         sys.exit(1)
     connection_token = login_res["connectionToken"]
 
-    commits = {
-        "type": "commits",
+    create_issue = {
+        "type": "createIssue",
         "connectionToken": connection_token,
         "repo": "HELL/HelloRepo1",
-        "branch": "main",
-        "page": 0,
+        "title": "New issue!",
+        "content": "Problem with stuff",
     }
 
-    commits_res = client.run_request(json.dumps(commits))
-    # print(json.dumps(commits_res))
-
-    if "error" in commits_res:
-        sys.exit(1)
-
-    diff = {
-        "type": "diff",
-        "connectionToken": connection_token,
-        "repo": "HELL/HelloRepo1",
-        "hash": commits_res["commits"][0]["hash"],
-    }
-    diff_res = client.run_request(json.dumps(diff))
-    if "error" in diff_res:
-        print(diff_res)
-        sys.exit(1)
-    print(client.file_request(diff_res["token"], diff_res["port"]).decode())
+    print(client.run_request(json.dumps(create_issue)))
