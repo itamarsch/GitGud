@@ -229,6 +229,28 @@ where "Repository".name LIKE %s and "Repository".public
             curr.fetchall(),
         )
 
+    def repo_and_owner_of_issue(self, issue_id: int) -> Optional[Tuple[str, str]]:
+        """
+        Returns the the owner and reponame of issue
+        """
+        curr = self.conn.cursor()
+
+        curr.execute(
+            """
+SELECT "User".username, "Repository".name
+FROM "Issue"
+JOIN "Repository" ON "Issue".repo_id = "Repository".id
+JOIN "User" ON "Repository".user_id = "User".id
+WHERE "Issue".id = %s
+""",
+            (issue_id,),
+        )
+        user_repo = curr.fetchone()
+        curr.close()
+        if user_repo is None:
+            return None
+        return cast(Tuple[str, str], user_repo)
+
 
 if __name__ == "__main__":
     load_dotenv()

@@ -1,9 +1,7 @@
 import base64
 import random
 from typing import Optional, cast
-import socket
 from cryptography.fernet import Fernet
-import compress
 
 
 def diffie_helman(num: int, g: int, p: int) -> int:

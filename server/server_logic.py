@@ -1,9 +1,7 @@
 import json
-from os.path import isdir
-from typing import Dict, List, Optional, Tuple, cast, Union
+from typing import Dict, List, Tuple, cast, Union
 import datetime
 from git.diff import Diff
-from gitdb.base import OStream
 from gitdb.util import os
 from database import DB
 from git_manager import GitManager
@@ -15,6 +13,7 @@ from server_protocol import (
     pack_commits,
     pack_create_issue,
     pack_create_repo,
+    pack_delete_issue,
     pack_diff,
     pack_error,
     pack_issue,
@@ -99,6 +98,7 @@ class ServerLogic:
                 ["repo", "connectionToken", "title", "content"],
             ),
             "viewIssues": (self.view_issues, ["repo", "connectionToken"]),
+            "deleteIssue": (self.delete_issue, ["id", "connectionToken"]),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -353,18 +353,31 @@ class ServerLogic:
 
     def view_issues(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
-        result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if isinstance(result, dict):
-            return result
+        error_or_repo = self.validate_repo_request(
+            full_repo_name, request["connectionToken"]
+        )
+        if isinstance(error_or_repo, dict):
+            return error_or_repo
 
-        repo = self.db.repo_by_name(full_repo_name)
-        assert repo is not None
-        repo_id = repo[0]
+        repo_id = error_or_repo[0]
 
         issues = self.db.issues(repo_id)
         return pack_view_issues(
             [pack_issue(issue[1], issue[2], issue[3], issue[0]) for issue in issues]
         )
+
+    def delete_issue(self, request: Json) -> Json:
+        repo = self.db.repo_and_owner_of_issue(request["id"])
+        if repo is None:
+            return pack_error("Invalid id")
+        error_or_repo = self.validate_repo_request(
+            f"{repo[0]}/{repo[1]}", request["connectionToken"]
+        )
+        if isinstance(error_or_repo, dict):
+            return error_or_repo
+
+        self.db.delete_issue(request["id"])
+        return pack_delete_issue()
 
 
 def make_diff_str(add: bool, diff: str) -> str:

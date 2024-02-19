@@ -66,8 +66,8 @@ class ClientComm:
         compressed_data = compress_str(data)
         encrypted_data = encryption.encrypt(compressed_data)
         send(soc, encrypted_data, regular_length_size)
-
         response = recv(soc, regular_length_size)
+        soc.close()
 
         result = decompress_bytes_to_str(encryption.decrypt(response))
         return json.loads(result)
@@ -96,10 +96,6 @@ if __name__ == "__main__":
         sys.exit(1)
     connection_token = login_res["connectionToken"]
 
-    create_issue = {
-        "type": "viewIssues",
-        "connectionToken": connection_token,
-        "repo": "HELL/HelloRepo1",
-    }
+    create_issue = {"type": "deleteIssue", "connectionToken": connection_token, "id": 6}
 
     print(client.run_request(json.dumps(create_issue)))

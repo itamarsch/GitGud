@@ -1,4 +1,3 @@
-from datetime import time
 import json
 from typing import List
 
@@ -69,3 +68,7 @@ def pack_issue(username: str, title: str, content: str, id: int):
 
 def pack_view_issues(issues: List[Json]) -> Json:
     return {"issues": issues}
+
+
+def pack_delete_issue() -> Json:
+    return {}

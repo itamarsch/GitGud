@@ -1,4 +1,3 @@
-import json
 import socket
 from threading import Thread
 from typing import Dict, List, Tuple
@@ -108,9 +107,10 @@ class ServerComm:
             self._read_sockets(rlist)
 
     def _disconnect_client(self, addr: Address):
-        soc = self.open_sockets[addr]
-        del self.open_sockets[addr]
-        soc[0].close()
+        if addr in self.open_sockets:
+            soc = self.open_sockets[addr]
+            del self.open_sockets[addr]
+            soc[0].close()
 
     def _read_sockets(self, rlist: List[socket.socket]):
         for soc in rlist:
