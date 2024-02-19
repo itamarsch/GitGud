@@ -251,6 +251,28 @@ WHERE "Issue".id = %s
             return None
         return cast(Tuple[str, str], user_repo)
 
+    def repo_and_owner_of_pr(self, pr_id: int) -> Optional[Tuple[str, str]]:
+        """
+        Returns the the owner and reponame of pr
+        """
+        curr = self.conn.cursor()
+
+        curr.execute(
+            """
+SELECT "User".username, "Repository".name
+FROM "PullRequest"
+JOIN "Repository" ON "PullRequest".repo_id = "Repository".id
+JOIN "User" ON "Repository".user_id = "User".id
+WHERE "PullRequest".id = %s
+""",
+            (pr_id,),
+        )
+        user_repo = curr.fetchone()
+        curr.close()
+        if user_repo is None:
+            return None
+        return cast(Tuple[str, str], user_repo)
+
 
 if __name__ == "__main__":
     load_dotenv()

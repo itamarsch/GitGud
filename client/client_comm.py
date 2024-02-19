@@ -96,6 +96,14 @@ if __name__ == "__main__":
         sys.exit(1)
     connection_token = login_res["connectionToken"]
 
-    create_issue = {"type": "deleteIssue", "connectionToken": connection_token, "id": 6}
+    create_pr = {
+        "type": "updatePullRequest",
+        "repo": "HELL/HelloRepo1",
+        "connectionToken": connection_token,
+        "id": 9,
+        "title": "New title!",
+        "fromBranch": "feature1",
+        "intoBranch": "main",
+    }
 
-    print(client.run_request(json.dumps(create_issue)))
+    print(client.run_request(json.dumps(create_pr)))

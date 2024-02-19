@@ -72,3 +72,35 @@ def pack_view_issues(issues: List[Json]) -> Json:
 
 def pack_delete_issue() -> Json:
     return {}
+
+
+def pack_update_issue() -> Json:
+    return {}
+
+
+def pack_create_pull_request() -> Json:
+    return {}
+
+
+def pack_pull_request(
+    username: str, title: str, from_branch: str, into_branch: str, id: int
+):
+    return {
+        "username": username,
+        "title": title,
+        "fromBranch": from_branch,
+        "intoBranch": into_branch,
+        "id": id,
+    }
+
+
+def pack_view_pull_requests(pull_requests: List[Json]) -> Json:
+    return {"pullRequests": pull_requests}
+
+
+def pack_delete_pr() -> Json:
+    return {}
+
+
+def pack_update_pr() -> Json:
+    return {}

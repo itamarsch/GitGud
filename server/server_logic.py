@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Tuple, cast, Union
+from typing import Dict, List, Tuple, cast, Union, Optional
 import datetime
 from git.diff import Diff
 from gitdb.util import os
@@ -12,21 +12,27 @@ from server_protocol import (
     pack_commit,
     pack_commits,
     pack_create_issue,
+    pack_create_pull_request,
     pack_create_repo,
     pack_delete_issue,
+    pack_delete_pr,
     pack_diff,
     pack_error,
     pack_issue,
     pack_login,
     pack_project_dirs,
+    pack_pull_request,
     pack_register,
+    pack_update_issue,
+    pack_update_pr,
     pack_view_file,
     pack_view_issues,
+    pack_view_pull_requests,
     unpack,
 )
-from git import GitCommandError, IndexObject
+from git import GitCommandError, IndexObject, Repo
 from server_comm import FileComm, ServerComm
-from gitgud_types import Action, Json, Address
+from gitgud_types import Action, IssuePr, Json, Address
 from secrets import token_urlsafe
 
 commit_page_size = 30
@@ -99,6 +105,20 @@ class ServerLogic:
             ),
             "viewIssues": (self.view_issues, ["repo", "connectionToken"]),
             "deleteIssue": (self.delete_issue, ["id", "connectionToken"]),
+            "updateIssue": (
+                self.update_issue,
+                ["id", "connectionToken", "title", "content"],
+            ),
+            "createPullRequest": (
+                self.create_pull_request,
+                ["repo", "connectionToken", "fromBranch", "intoBranch"],
+            ),
+            "viewPullRequests": (self.view_pull_requests, ["repo", "connectionToken"]),
+            "deletePullRequest": (self.delete_pull_request, ["id", "connectionToken"]),
+            "updatePullRequest": (
+                self.update_pull_request,
+                ["id", "connectionToken", "title", "fromBranch", "intoBranch"],
+            ),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -172,7 +192,7 @@ class ServerLogic:
 
         # Safe to clone, repo exists in database
         with RepoClone(full_repo_name) as r:
-            branches = [branch.name for branch in r.remote().refs]
+            branches = branches_of_repo(r)
         return pack_branches(branches)
 
     def view_file(self, request: Json) -> Json:
@@ -366,20 +386,130 @@ class ServerLogic:
             [pack_issue(issue[1], issue[2], issue[3], issue[0]) for issue in issues]
         )
 
-    def delete_issue(self, request: Json) -> Json:
-        repo = self.db.repo_and_owner_of_issue(request["id"])
+    def validate_issue_or_pr(
+        self, id: int, connection_token: str, issue: IssuePr
+    ) -> Optional[Json]:
+        if issue == "Issue":
+            repo = self.db.repo_and_owner_of_issue(id)
+        else:
+            repo = self.db.repo_and_owner_of_pr(id)
         if repo is None:
             return pack_error("Invalid id")
         error_or_repo = self.validate_repo_request(
-            f"{repo[0]}/{repo[1]}", request["connectionToken"]
+            f"{repo[0]}/{repo[1]}", connection_token
+        )
+        if isinstance(error_or_repo, dict):
+            return error_or_repo
+        return None
+
+    def delete_issue(self, request: Json) -> Json:
+        error = self.validate_issue_or_pr(
+            request["id"], request["connectionToken"], "Issue"
+        )
+        if error is not None:
+            return error
+
+        self.db.delete_issue(request["id"])
+        return pack_delete_issue()
+
+    def update_issue(self, request: Json) -> Json:
+        id = request["id"]
+        connectionToken = request["connectionToken"]
+        error = self.validate_issue_or_pr(id, connectionToken, "Issue")
+        if error is not None:
+            return error
+
+        self.db.update_issue(id, request["title"], request["content"])
+        return pack_update_issue()
+
+    def create_pull_request(self, request: Json) -> Json:
+        error_or_repo = self.validate_repo_request(
+            request["repo"], request["connectionToken"]
         )
         if isinstance(error_or_repo, dict):
             return error_or_repo
 
-        self.db.delete_issue(request["id"])
-        return pack_delete_issue()
+        username = self.connected_client[request["connectionToken"]]
+        user_id = self.db.username_to_id(username)
+
+        # Repo validation asserts this
+        assert user_id is not None
+
+        from_branch = request["fromBranch"]
+        into_branch = request["intoBranch"]
+        repo_id = error_or_repo[0]
+        with RepoClone(request["repo"]) as repo:
+            branches = branches_of_repo(repo)
+            if not (from_branch in branches and into_branch in branches):
+                return pack_error("Invalid branch names")
+
+        self.db.create_pr(
+            request["title"],
+            from_branch,
+            into_branch,
+            repo_id,
+            user_id,
+        )
+        return pack_create_pull_request()
+
+    def view_pull_requests(self, request: Json) -> Json:
+        error_or_repo = self.validate_repo_request(
+            request["repo"], request["connectionToken"]
+        )
+        if isinstance(error_or_repo, dict):
+            return error_or_repo
+
+        repo_id = error_or_repo[0]
+
+        pull_requests = self.db.pull_requests(repo_id)
+
+        with RepoClone(request["repo"]) as repo:
+            branches = branches_of_repo(repo)
+            for i, pr in enumerate(pull_requests):
+                (id, _, _, from_branch, into_branch) = pr
+                if from_branch not in branches or into_branch not in branches:
+                    pull_requests.pop(i)
+                    self.db.delete_pr(id)
+
+        return pack_view_pull_requests(
+            [
+                pack_pull_request(issue[1], issue[2], issue[3], issue[4], issue[0])
+                for issue in pull_requests
+            ]
+        )
+
+    def delete_pull_request(self, request: Json) -> Json:
+        id = request["id"]
+        connectionToken = request["connectionToken"]
+        error = self.validate_issue_or_pr(id, connectionToken, "PR")
+        if error is not None:
+            return error
+
+        self.db.delete_pr(id)
+        return pack_delete_pr()
+
+    def update_pull_request(self, request: Json) -> Json:
+        id = request["id"]
+        connectionToken = request["connectionToken"]
+        from_branch = request["fromBranch"]
+        into_branch = request["intoBranch"]
+        title = request["title"]
+        error = self.validate_issue_or_pr(id, connectionToken, "PR")
+        if error is not None:
+            return error
+
+        with RepoClone(request["repo"]) as repo:
+            branches = branches_of_repo(repo)
+            if from_branch not in branches or into_branch not in branches:
+                return pack_error("Invalid branches")
+        self.db.update_pr(id, title, from_branch, into_branch)
+        return pack_update_pr()
 
 
 def make_diff_str(add: bool, diff: str) -> str:
     add_remove_str = "++" if add else "--"
     return "\n".join([f"{add_remove_str}{line}" for line in diff.splitlines()])
+
+
+def branches_of_repo(repo: Repo) -> List[str]:
+    return [branch.name.removeprefix("origin/") for branch in repo.remote().refs]
