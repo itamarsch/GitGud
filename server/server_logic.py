@@ -1,11 +1,11 @@
 import json
 from typing import Dict, List, Tuple, cast, Union, Optional
 import datetime
-from git.diff import Diff
 from gitdb.util import os
 from database import DB
 from git_manager import GitManager
 from queue import Queue
+from diff import get_diff_string
 from repo_clone import RepoClone
 from server_protocol import (
     pack_branches,
@@ -30,7 +30,7 @@ from server_protocol import (
     pack_view_pull_requests,
     unpack,
 )
-from git import GitCommandError, IndexObject, Repo
+from git import GitCommandError, Repo
 from server_comm import FileComm, ServerComm
 from gitgud_types import Action, IssuePr, Json, Address
 from secrets import token_urlsafe
@@ -119,6 +119,7 @@ class ServerLogic:
                 self.update_pull_request,
                 ["id", "connectionToken", "title", "fromBranch", "intoBranch"],
             ),
+            "prDiff": (self.pr_diff, ["connectionToken", "prId"]),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -300,57 +301,9 @@ class ServerLogic:
             except Exception:
                 return pack_error("Invalid commit hash")
 
-            diff = commit.parents[0].diff(commit)
-
-            diff_result: List[str] = []
-            for diff_item in diff.iter_change_type("R"):
-                diff_item: Diff
-                diff_result.append(
-                    f"Rename: {diff_item.rename_from} -> {diff_item.rename_to}"
-                )
-            for diff_item in diff.iter_change_type("A"):
-                diff_item: Diff
-                blob = (
-                    cast(IndexObject, diff_item.b_blob)
-                    .data_stream.read()
-                    .decode("utf-8")
-                )
-
-                blob = make_diff_str(True, blob)
-                diff_result.append(f"Added: {diff_item.b_path}\n{blob}")
-
-            for diff_item in diff.iter_change_type("D"):
-                diff_item: Diff
-                blob = (
-                    cast(IndexObject, diff_item.a_blob)
-                    .data_stream.read()
-                    .decode("utf-8")
-                )
-
-                blob = make_diff_str(False, blob)
-                diff_result.append(f"Deleted: {diff_item.a_path}\n{blob}")
-
-            for diff_item in diff.iter_change_type("M"):
-                diff_item: Diff
-
-                b_blob: str = (
-                    cast(IndexObject, diff_item.b_blob)
-                    .data_stream.read()
-                    .decode("utf-8")
-                )
-                a_blob: str = (
-                    cast(IndexObject, diff_item.a_blob)
-                    .data_stream.read()
-                    .decode("utf-8")
-                )
-                b_blob = make_diff_str(True, b_blob)
-                a_blob = make_diff_str(False, a_blob)
-                diff_result.append(
-                    f"Modified: {diff_item.b_path}\n" + b_blob + "\n" + a_blob
-                )
-            full_diff = "\n****************\n".join(diff_result).encode()
             token = token_urlsafe(32)
-            file_com = FileComm(full_diff, token)
+            full_diff = get_diff_string(commit.parents[0].diff(commit))
+            file_com = FileComm(full_diff.encode(), token)
         return pack_diff(file_com.get_port(), token)
 
     def create_issue(self, request: Json) -> Json:
@@ -505,10 +458,31 @@ class ServerLogic:
         self.db.update_pr(id, title, from_branch, into_branch)
         return pack_update_pr()
 
+    def pr_diff(self, request: Json) -> Json:
+        full_repo_name = cast(str, request["repo"])
+        error = self.validate_issue_or_pr(
+            request["prId"], request["connectionToken"], "PR"
+        )
+        if error is not None:
+            return error
 
-def make_diff_str(add: bool, diff: str) -> str:
-    add_remove_str = "++" if add else "--"
-    return "\n".join([f"{add_remove_str}{line}" for line in diff.splitlines()])
+        branches = cast(
+            Tuple[str, str], self.db.pr_branches(request["prId"])
+        )  # Saftey: id validation in validate_issue_or_pr
+
+        if branches[0].startswith("origin/") or branches[1].startswith("origin/"):
+            return pack_error("Use only branch name no need for remote")
+
+        with RepoClone(full_repo_name) as r:
+
+            diff = r.git.diff(f"origin/{branches[0]}...origin/{branches[1]}")
+            print(diff)
+
+            token = token_urlsafe(32)
+            full_diff = get_diff_string(diff)
+
+            file_com = FileComm(full_diff.encode(), token)
+        return pack_diff(file_com.get_port(), token)
 
 
 def branches_of_repo(repo: Repo) -> List[str]:

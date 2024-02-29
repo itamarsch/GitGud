@@ -247,9 +247,7 @@ WHERE "Issue".id = %s
         )
         user_repo = curr.fetchone()
         curr.close()
-        if user_repo is None:
-            return None
-        return cast(Tuple[str, str], user_repo)
+        return cast(Optional[Tuple[str, str]], user_repo)
 
     def repo_and_owner_of_pr(self, pr_id: int) -> Optional[Tuple[str, str]]:
         """
@@ -269,9 +267,21 @@ WHERE "PullRequest".id = %s
         )
         user_repo = curr.fetchone()
         curr.close()
-        if user_repo is None:
-            return None
-        return cast(Tuple[str, str], user_repo)
+        return cast(Optional[Tuple[str, str]], user_repo)
+
+    def pr_branches(self, id: int) -> Optional[Tuple[str, str]]:
+        """
+        Returns: into_branch, from_branch of pr
+        """
+        curr = self.conn.cursor()
+
+        curr.execute(
+            """SELECT into_branch, from_branch FROM "PullRequest" WHERE id = %s""",
+            (id,),
+        )
+
+        branches = curr.fetchone()
+        return cast(Optional[Tuple[str, str]], branches)
 
 
 if __name__ == "__main__":

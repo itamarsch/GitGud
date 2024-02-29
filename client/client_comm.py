@@ -97,13 +97,15 @@ if __name__ == "__main__":
     connection_token = login_res["connectionToken"]
 
     create_pr = {
-        "type": "updatePullRequest",
+        "type": "prDiff",
         "repo": "HELL/HelloRepo1",
         "connectionToken": connection_token,
-        "id": 9,
-        "title": "New title!",
-        "fromBranch": "feature1",
-        "intoBranch": "main",
+        "prId": 10,
     }
 
-    print(client.run_request(json.dumps(create_pr)))
+    result = client.run_request(json.dumps(create_pr))
+    if "error" in result:
+        print(result)
+        sys.exit(1)
+
+    print(client.file_request(result["token"], result["port"]).decode())
