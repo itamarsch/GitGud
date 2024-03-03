@@ -115,19 +115,18 @@ class ServerComm:
     def _read_sockets(self, rlist: List[socket.socket]):
         for soc in rlist:
             if soc is self.server_socket:
-                new_client, addr = self.server_socket.accept()
-                self._new_client(new_client, addr)
+                try:
+                    new_client, addr = self.server_socket.accept()
+                    self._new_client(new_client, addr)
+                except Exception:
+                    print("Error on new client")
+                    continue
             else:
                 addr = self._get_addr_of_socket(soc)
-                try:
-                    if self.open_sockets[addr][1].finished_encryption():
-                        self._on_message_receive(soc, addr)
-                    else:
-                        self._on_receive_encryption(soc, addr)
-                except Exception as e:
-                    print(f"Disconnecting {addr}", e)
-
-                    self._disconnect_client(addr)
+                if self.open_sockets[addr][1].finished_encryption():
+                    self._on_message_receive(soc, addr)
+                else:
+                    self._on_receive_encryption(soc, addr)
 
     def send_and_close(self, adr: Address, data: str):
         (soc, encyption) = self.open_sockets[adr]
@@ -136,21 +135,36 @@ class ServerComm:
         self._disconnect_client(adr)
 
     def _on_message_receive(self, soc: socket.socket, addr: Address):
-        data_bytes = recv(soc, regular_length_size)
-        data_decrypted = self.open_sockets[addr][1].decrypt(data_bytes)
-        data_decompressed = decompress_bytes(data_decrypted)
+        try:
+            data_bytes = recv(soc, regular_length_size)
+            data_decrypted = self.open_sockets[addr][1].decrypt(data_bytes)
+            data_decompressed = decompress_bytes(data_decrypted)
+        except Exception as e:
+            print(f"Disconnecting {addr}", e)
+            self._disconnect_client(addr)
+            return
         self.logic_queue.put((data_decompressed, addr))
 
     def _on_receive_encryption(self, soc: socket.socket, addr: Address):
-        encryption_response_bytes = recv(soc, encryption_length_size)
-        self.open_sockets[addr][1].set_encryption_key(encryption_response_bytes)
+        try:
+            encryption_response_bytes = recv(soc, encryption_length_size)
+            self.open_sockets[addr][1].set_encryption_key(encryption_response_bytes)
+        except Exception as e:
+            print(f"Disconnecting {addr}", e)
+            self._disconnect_client(addr)
+            return
 
     def _new_client(self, soc: socket.socket, addr: Address):
         encryption = EncryptionState()
         self.open_sockets[addr] = (soc, encryption)
 
         encryption_initial_message = encryption.get_initial_public_message()
-        send(soc, encryption_initial_message, encryption_length_size)
+        try:
+            send(soc, encryption_initial_message, encryption_length_size)
+        except Exception as e:
+            print(f"Disconnecting {addr}", e)
+            self._disconnect_client(addr)
+            return
 
     def start_listeneing(self, port: int):
         self.running = True

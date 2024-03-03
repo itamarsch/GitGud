@@ -1,6 +1,6 @@
 import base64
 import random
-from typing import Optional
+from typing import Optional, cast
 
 from cryptography.fernet import Fernet
 
@@ -18,19 +18,16 @@ class EncryptionState:
     https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
     """
 
-    secret_key: int
-    encryption_key: Optional[int]
-    fernet: Fernet
+    def __init__(self):
+        self.secret_key: int = random.randint(0, 1000)
+        self.encryption_key: Optional[int] = None
+        self.fernet = None
 
     def encrypt(self, data: bytes) -> bytes:
-        return self.fernet.encrypt(data)
+        return cast(Fernet, self.fernet).encrypt(data)
 
     def decrypt(self, data: bytes) -> bytes:
-        return self.fernet.decrypt(data)
-
-    def __init__(self):
-        self.secret_key = random.randint(0, 1000)
-        self.encryption_key = None
+        return cast(Fernet, self.fernet).decrypt(data)
 
     def set_encryption_key(self, client_mixed_key_response_bytes: bytes):
         """

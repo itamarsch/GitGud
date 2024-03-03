@@ -13,21 +13,18 @@ class EncryptionState:
     https://en.wikipedia.org/wiki/Diffie%E2%80%93Hellman_key_exchange
     """
 
-    secret_key: int
-    encryption_key: Optional[int]
+    def __init__(self):
+        self.p: Optional[int] = None
+        self.g: Optional[int] = None
+        self.secret_key = random.randint(0, 1000)
+        self.encryption_key: Optional[int] = None
+        self.fernet: Fernet
 
     def encrypt(self, data: bytes) -> bytes:
         return self.fernet.encrypt(data)
 
     def decrypt(self, data: bytes) -> bytes:
         return self.fernet.decrypt(data)
-
-    def __init__(self):
-        self.p: Optional[int] = None
-        self.g: Optional[int] = None
-        self.secret_key = random.randint(0, 1000)
-        self.encryption_key = None
-        self.fernet: Fernet
 
     def set_encryption_key(self, server_mixed_key_bytes: int):
         """
