@@ -50,11 +50,8 @@ class RepoScren(wx.Panel):
 
         self.SetSizerAndFit(outer_sizer)
 
-    def on_repo_enter(self, event):
+    def on_repo_enter(self, _):
         def on_finished(response: Json):
-            if "error" in response:
-                wx.MessageBox(response["error"])
-                return
             self.branches_list.Clear()
             self.branches_list.Append(response["branches"])
 

@@ -65,12 +65,9 @@ class LoginPanel(wx.Panel):
         password = self.password_text.GetValue()
 
         def on_finished(response: Json):
-            if "connectionToken" in response:
-                cast(MainFrame, self.GetParent()).change_screen(
-                    RepoScren(self.GetParent(), response["connectionToken"])
-                )
-            elif "error" in response:
-                wx.MessageBox(response["error"])
+            cast(MainFrame, self.GetParent()).change_screen(
+                RepoScren(self.GetParent(), response["connectionToken"])
+            )
 
         gui_run_request(self, pack_login(username, password), on_finished)
 

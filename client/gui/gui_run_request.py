@@ -24,12 +24,18 @@ def gui_request_file(
 
 
 def gui_run_request(
-    panel: wx.Panel, request: Json, on_finished: Callable[[Json], None]
+    panel: wx.Panel,
+    request: Json,
+    on_finished: Callable[[Json], None],
+    message_box_error=True,
 ):
     parent = cast(MainFrame, panel.GetParent())
 
     def run_request(request: Json):
         result = parent.client_com.run_request(request)
-        wx.CallAfter(on_finished, result)
+        if message_box_error and "error" in result:
+            wx.MessageBox(f"Error: {result['error']}")
+        else:
+            wx.CallAfter(on_finished, result)
 
     Thread(target=run_request, args=(request,)).start()
