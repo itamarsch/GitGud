@@ -97,15 +97,12 @@ if __name__ == "__main__":
     connection_token = login_res["connectionToken"]
 
     create_pr = {
-        "type": "prDiff",
-        "repo": "HELL/HelloRepo1",
-        "connectionToken": connection_token,
-        "prId": 10,
+        "type": "validateConnection",
+        "tokenForValidation": connection_token[1:],
     }
 
     result = client.run_request(create_pr)
+    print(result)
     if "error" in result:
         print(result)
         sys.exit(1)
-
-    print(client.file_request(result["token"], result["port"]).decode())

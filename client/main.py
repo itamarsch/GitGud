@@ -8,21 +8,15 @@ from gui.register import RegisterPanel
 
 class MainFrame(wx.Frame):
 
-    def __init__(self):
+    def __init__(self, client_com: ClientComm):
         super().__init__(None, title="GitGud")
-        port = int(cast(str, os.getenv("SERVER_PORT")))
-        ip = cast(str, os.getenv("SERVER_IP"))
-        addr = (ip, port)
 
+        self.client_com = client_com
         self.screens = []
-
-        self.client_com = ClientComm(addr)
         self.connection_token: Optional[str] = None
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
-
-        self.current_panel: wx.Panel
 
         self.change_screen(RegisterPanel(self))
         self.Maximize()
@@ -55,7 +49,13 @@ class MainFrame(wx.Frame):
 
 if __name__ == "__main__":
     load_dotenv()
+
+    port = int(cast(str, os.getenv("SERVER_PORT")))
+    ip = cast(str, os.getenv("SERVER_IP"))
+
+    client_com = ClientComm((ip, port))
+
     app = wx.App(False)
 
-    main_frame = MainFrame()
+    main_frame = MainFrame(client_com)
     app.MainLoop()

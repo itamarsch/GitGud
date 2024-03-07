@@ -25,6 +25,7 @@ from server_protocol import (
     pack_register,
     pack_update_issue,
     pack_update_pr,
+    pack_validate_password,
     pack_view_file,
     pack_view_issues,
     pack_view_pull_requests,
@@ -120,6 +121,7 @@ class ServerLogic:
                 ["id", "connectionToken", "title", "fromBranch", "intoBranch"],
             ),
             "prDiff": (self.pr_diff, ["connectionToken", "prId"]),
+            "validateConnection": (self.validate_connection, ["tokenForValidation"]),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -483,6 +485,11 @@ class ServerLogic:
 
             file_com = FileComm(full_diff.encode(), token)
         return pack_diff(file_com.get_port(), token)
+
+    def validate_connection(self, request: Json) -> Json:
+        return pack_validate_password(
+            request["tokenForValidation"] in self.connected_client
+        )
 
 
 def branches_of_repo(repo: Repo) -> List[str]:
