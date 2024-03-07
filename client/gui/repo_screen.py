@@ -1,4 +1,5 @@
 import wx
+from typing import cast
 from gui.file_screen import FileContent
 from client_protocol import pack_branches, pack_file_request, pack_project_directory
 from gui.gui_run_request import gui_request_file, gui_run_request
@@ -25,7 +26,7 @@ class RepoScren(wx.Panel):
         self.branches_list.Bind(wx.EVT_COMBOBOX, self.on_branch_selected)
 
         self.directory_list = wx.ListBox(self, choices=[])
-        self.directory_list.Bind(wx.EVT_LISTBOX, self.on_file_selected)
+        self.directory_list.Bind(wx.EVT_LISTBOX_DCLICK, self.on_file_selected)
 
         # Main Panel Layout
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -67,35 +68,22 @@ class RepoScren(wx.Panel):
 
         pass
 
-    def request_dir(self):
-        def on_finished(result: Json):
-            self.directory_list.Clear()
-            self.directory_list.Append(result["files"])
-            pass
-
-        gui_run_request(
-            self,
-            pack_project_directory(
-                self.directory,
-                self.repo_text.GetValue(),
-                self.branch,
-                self.connection_token,
-            ),
-            on_finished,
-        )
-
-    def on_branch_selected(self, event):
+    def on_branch_selected(self, _):
         selection = self.branches_list.GetSelection()
         if selection != wx.NOT_FOUND:
             self.branch = self.branches_list.GetString(selection)
-            print(f"New branch {self.branch}")
             self.directory = ""
-            self.request_dir()
+            self.request_directory_structure()
 
-    def on_file_selected(self, event):
+    def on_file_selected(self, _):
         selection = self.directory_list.GetSelection()
         if selection != wx.NOT_FOUND:
-            file_name = self.directory_list.GetString(selection)
+
+            file_name = cast(str, self.directory_list.GetString(selection))
+            if file_name.endswith("/"):
+                self.directory += file_name
+                self.request_directory_structure()
+                return
 
             def on_finished(result: bytes):
                 try:
@@ -116,3 +104,30 @@ class RepoScren(wx.Panel):
                 ),
                 on_finished,
             )
+
+    def request_directory_structure(self):
+        def on_finished(result: Json):
+            self.directory_list.Clear()
+            if not is_base_directory(self.directory):
+                self.directory_list.Append("../")
+            self.directory_list.Append(result["files"])
+            pass
+
+        gui_run_request(
+            self,
+            pack_project_directory(
+                self.directory,
+                self.repo_text.GetValue(),
+                self.branch,
+                self.connection_token,
+            ),
+            on_finished,
+        )
+
+
+def is_base_directory(path: str) -> bool:
+    dirs = [dir for dir in path.split("/") if dir]
+
+    double_dots = [dir for dir in dirs if dir == ".."]
+
+    return len(double_dots) == len(dirs) / 2
