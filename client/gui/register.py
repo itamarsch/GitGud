@@ -1,5 +1,11 @@
 import wx
+import hashlib
 from typing import cast
+import hash_password
+from gitgud_types import Json
+from client_protocol import pack_register
+
+from gui.gui_run_request import gui_run_request
 
 
 class RegisterPanel(wx.Panel):
@@ -60,10 +66,13 @@ class RegisterPanel(wx.Panel):
 
     def on_register(self, event):
         username = self.username_text.GetValue()
-        password = self.password_text.GetValue()
-        sshkey = self.sshkey_text.GetValue()
+        password = hash_password.hash(self.password_text.GetValue())
+        ssh_key = self.sshkey_text.GetValue()
 
-        pass
+        def on_finished(result: Json):
+            pass
+
+        gui_run_request(self, pack_register(username, password, ssh_key), on_finished)
 
     def on_login(self, event):
         from gui.login_panel import LoginPanel

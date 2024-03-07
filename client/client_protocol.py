@@ -5,6 +5,15 @@ def pack_login(username: str, password: str) -> Json:
     return {"type": "login", "username": username, "password": password}
 
 
+def pack_register(username: str, password: str, ssh_key: str) -> Json:
+    return {
+        "type": "register",
+        "username": username,
+        "password": password,
+        "sshKey": ssh_key,
+    }
+
+
 def pack_branches(repo: str, connectionToken: str) -> Json:
     return {"type": "branches", "repo": repo, "connectionToken": connectionToken}
 

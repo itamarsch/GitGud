@@ -1,6 +1,7 @@
 import json
 import wx
 import wx.adv
+import hash_password
 from typing import cast
 from token_file import save_token_file
 from gui.repo_screen import RepoScreen
@@ -63,7 +64,7 @@ class LoginPanel(wx.Panel):
 
     def on_login(self, event):
         username = self.username_text.GetValue()
-        password = self.password_text.GetValue()
+        password = hash_password.hash(self.password_text.GetValue())
 
         def on_finished(response: Json):
             token = response["connectionToken"]
@@ -73,5 +74,3 @@ class LoginPanel(wx.Panel):
             )
 
         gui_run_request(self, pack_login(username, password), on_finished)
-
-        pass
