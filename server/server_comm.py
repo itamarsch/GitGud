@@ -55,7 +55,7 @@ class FileComm:
     def _listen(self):
         self.soc = socket.socket()
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.soc.bind(("127.0.0.1", 0))
+        self.soc.bind(("0.0.0.0", 0))
         self.soc.listen(1)
         self.running = True
         encryption = EncryptionState()
@@ -96,7 +96,7 @@ class ServerComm:
         )
 
     def _listen(self, port: int):
-        self.server_socket.bind(("127.0.0.1", port))
+        self.server_socket.bind(("0.0.0.0", port))
         self.server_socket.listen(4)
         while self.running:
             current_sockets = [conn[0] for conn in self.open_sockets.values()]
