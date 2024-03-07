@@ -1,24 +1,31 @@
 import wx
 import os
+from token_file import read_token_file
 from client_comm import ClientComm
+from client_protocol import pack_validate_token
 from typing import Optional, cast
 from dotenv import load_dotenv
-from gui.register import RegisterPanel
 
 
 class MainFrame(wx.Frame):
 
-    def __init__(self, client_com: ClientComm):
+    def __init__(self, client_com: ClientComm, connection_token: Optional[str]):
         super().__init__(None, title="GitGud")
 
         self.client_com = client_com
         self.screens = []
-        self.connection_token: Optional[str] = None
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
 
-        self.change_screen(RegisterPanel(self))
+        if connection_token:
+            from gui.repo_screen import RepoScreen
+
+            self.change_screen(RepoScreen(self, connection_token))
+        else:
+            from gui.register import RegisterPanel
+
+            self.change_screen(RegisterPanel(self))
         self.Maximize()
 
         self.Show()
@@ -57,5 +64,13 @@ if __name__ == "__main__":
 
     app = wx.App(False)
 
-    main_frame = MainFrame(client_com)
+    token = read_token_file()
+
+    valid_token: bool = False
+    if token:
+        result = client_com.run_request(pack_validate_token(token))
+        if result["valid"]:
+            valid_token = True
+
+    MainFrame(client_com, token if valid_token else None)
     app.MainLoop()

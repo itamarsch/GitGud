@@ -2,7 +2,8 @@ import json
 import wx
 import wx.adv
 from typing import cast
-from gui.repo_screen import RepoScren
+from token_file import save_token_file
+from gui.repo_screen import RepoScreen
 from main import MainFrame
 from client_protocol import pack_login
 from gitgud_types import Json
@@ -65,8 +66,10 @@ class LoginPanel(wx.Panel):
         password = self.password_text.GetValue()
 
         def on_finished(response: Json):
+            token = response["connectionToken"]
+            save_token_file(token)
             cast(MainFrame, self.GetParent()).change_screen(
-                RepoScren(self.GetParent(), response["connectionToken"])
+                RepoScreen(self.GetParent(), token)
             )
 
         gui_run_request(self, pack_login(username, password), on_finished)

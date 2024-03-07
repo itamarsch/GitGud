@@ -29,3 +29,7 @@ def pack_file_request(repo: str, connection_token: str, file_path: str, branch: 
         "filePath": file_path,
         "branch": branch,
     }
+
+
+def pack_validate_token(token: str):
+    return {"type": "validateConnection", "tokenForValidation": token}

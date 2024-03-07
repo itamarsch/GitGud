@@ -7,7 +7,7 @@ from gui.gui_run_request import gui_request_file, gui_run_request
 from gitgud_types import Json
 
 
-class RepoScren(wx.Panel):
+class RepoScreen(wx.Panel):
     def __init__(self, parent, connection_token: str):
         super().__init__(parent)
         self.connection_token = connection_token

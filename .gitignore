@@ -1,5 +1,6 @@
 server/.env
 client/.env
+client/.token_cookie
 gitolite-admin/
 server/__pycache__
 client/__pycache__
