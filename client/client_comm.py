@@ -58,12 +58,12 @@ class ClientComm:
         send(soc, mixed_client_key, encryption_length_size)
         return encryption
 
-    def run_request(self, data: str) -> Json:
+    def run_request(self, data: Json) -> Json:
         soc = socket.socket()
         soc.connect(self.ip)
 
         encryption = self._exchange_keys(soc)
-        compressed_data = compress_str(data)
+        compressed_data = compress_str(json.dumps(data))
         encrypted_data = encryption.encrypt(compressed_data)
         send(soc, encrypted_data, regular_length_size)
         response = recv(soc, regular_length_size)
@@ -90,7 +90,7 @@ if __name__ == "__main__":
         "username": "HELLO",
         "password": "FADFDSDf",
     }
-    login_res = client.run_request(json.dumps(request))
+    login_res = client.run_request(request)
     # print(login_res)
     if "error" in login_res:
         sys.exit(1)
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         "prId": 10,
     }
 
-    result = client.run_request(json.dumps(create_pr))
+    result = client.run_request(create_pr)
     if "error" in result:
         print(result)
         sys.exit(1)

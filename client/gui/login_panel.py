@@ -1,5 +1,13 @@
+import json
 import wx
+import wx.adv
 from typing import cast
+from gui.repo_screen import RepoScren
+from main import MainFrame
+from client_protocol import pack_login
+from gitgud_types import Json
+
+from gui.gui_run_request import gui_run_request
 
 
 class LoginPanel(wx.Panel):
@@ -52,5 +60,18 @@ class LoginPanel(wx.Panel):
 
         self.Parent.change_screen(RegisterPanel(self.GetParent()))
 
-    def on_login(self):
+    def on_login(self, event):
+        username = self.username_text.GetValue()
+        password = self.password_text.GetValue()
+
+        def on_finished(response: Json):
+            if "connectionToken" in response:
+                cast(MainFrame, self.GetParent()).change_screen(
+                    RepoScren(self.GetParent(), response["connectionToken"])
+                )
+            elif "error" in response:
+                wx.MessageBox(response["error"])
+
+        gui_run_request(self, pack_login(username, password), on_finished)
+
         pass
