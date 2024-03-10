@@ -16,6 +16,7 @@ def gui_request_file(
         result = parent.client_com.run_request(request)
         if "error" in result:
             wx.CallAfter(wx.MessageBox, f"Error: {result['error']}")
+            return
 
         file_content = parent.client_com.file_request(result["token"], result["port"])
         wx.CallAfter(on_finished, file_content)

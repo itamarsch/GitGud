@@ -55,6 +55,15 @@ def pack_commits(repo: str, connection_token: str, branch: str, page: int):
     }
 
 
+def pack_diff(repo: str, connection_token: str, hash: str) -> Json:
+    return {
+        "type": "diff",
+        "repo": repo,
+        "connectionToken": connection_token,
+        "hash": hash,
+    }
+
+
 class Commit(TypedDict):
     date: str
     hash: str

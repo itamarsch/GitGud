@@ -1,10 +1,11 @@
 import wx
 import wx.html2
 from typing import Callable, List, cast
+from gui.commit_diff import CommitDiff
 from gitgud_types import Json
-from gui.gui_run_request import gui_run_request
+from gui.gui_run_request import gui_request_file, gui_run_request
 
-from client_protocol import Commit, pack_commits
+from client_protocol import Commit, pack_commits, pack_diff
 
 
 class Commits(wx.Panel):
@@ -15,12 +16,14 @@ class Commits(wx.Panel):
         self.connection_token = connection_token
         self.branch = branch
         self.page = 0
+        self.commits: List[Commit] = []
         self.request_commits()
 
         return_button = wx.Button(self, label="Return")
         return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
 
         self.commits_list = wx.ListBox(self, choices=[])
+        self.commits_list.Bind(wx.EVT_LISTBOX_DCLICK, self.on_commit_select)
 
         # Main Panel Layout
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -63,9 +66,25 @@ class Commits(wx.Panel):
         self.page_text.SetLabel(str(page))
         self.request_commits()
 
+    def on_commit_select(self, _):
+
+        index = self.commits_list.GetSelection()
+
+        commit = cast(Commit, self.commits[index])
+
+        def on_finished(diff: bytes):
+            self.GetParent().push_screen(CommitDiff(self.GetParent(), diff.decode()))
+
+        gui_request_file(
+            self,
+            pack_diff(self.repo, self.connection_token, commit["hash"]),
+            on_finished,
+        )
+
     def request_commits(self):
         def on_finished(result: Json):
             commits = cast(List[Commit], result["commits"])
+            self.commits = commits
             self.commits_list.Clear()
             self.commits_list.Append(commits_as_str(commits))
 
