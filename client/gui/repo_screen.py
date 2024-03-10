@@ -1,12 +1,10 @@
 import wx
-from typing import List, cast
+from typing import cast
 from gui.commits import Commits
 from main import MainFrame
 from gui.file_screen import FileContent
 from client_protocol import (
-    Commit,
     pack_branches,
-    pack_commits,
     pack_file_request,
     pack_project_directory,
 )
