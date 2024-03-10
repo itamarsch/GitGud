@@ -22,7 +22,11 @@ class LoginPanel(wx.Panel):
 
         # Password
         password_label = wx.StaticText(self, label="Password:")
-        self.password_text = wx.TextCtrl(self, style=wx.TE_PASSWORD)
+        self.password_text = wx.TextCtrl(
+            self, style=wx.TE_PASSWORD | wx.TE_PROCESS_ENTER
+        )
+
+        self.password_text.Bind(wx.EVT_TEXT_ENTER, self.on_login)
 
         # Register Button
         login_button = wx.Button(self, label="Login")
