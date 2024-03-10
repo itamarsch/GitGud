@@ -14,9 +14,7 @@ class FileContent(wx.Panel):
 
         # python -c "from pygments.styles import get_all_styles; styles = list(get_all_styles()); print(*styles, sep='\n')"
         formatter = HtmlFormatter(
-            full=True,
-            style="gruvbox-dark",
-            cssstyles=f"font-size: 25px;",
+            full=True, style="gruvbox-dark", cssstyles=f"font-size: 25px;", linenos=True
         )
         formatted_content = highlight(file_content, lexer, formatter)
 
