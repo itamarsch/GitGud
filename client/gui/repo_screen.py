@@ -6,6 +6,8 @@ from gui.gui_run_request import gui_request_file, gui_run_request
 
 from gitgud_types import Json
 
+branches_placeholder = "Select a branch"
+
 
 class RepoScreen(wx.Panel):
     def __init__(self, parent, connection_token: str):
@@ -20,13 +22,34 @@ class RepoScreen(wx.Panel):
 
         self.repo_text.Bind(wx.EVT_TEXT_ENTER, self.on_repo_enter)
 
-        branches_label = wx.StaticText(self, label="Branches")
+        repo_options = wx.BoxSizer(wx.HORIZONTAL)
 
         self.branches_list = wx.ComboBox(self, choices=[], style=wx.CB_READONLY)
         self.branches_list.Bind(wx.EVT_COMBOBOX, self.on_branch_selected)
 
+        commits_button = wx.Button(self, label="Commits")
+
+        issues_button = wx.Button(self, label="Issues")
+
+        pull_requests_button = wx.Button(self, label="Pull requests")
+
+        repo_options_widget = [
+            self.branches_list,
+            commits_button,
+            issues_button,
+            pull_requests_button,
+        ]
+        for i, widget in enumerate(repo_options_widget):
+            repo_options.Add(widget, 1, wx.EXPAND)
+            if i != len(repo_options_widget) - 1:
+                repo_options.AddSpacer(5)
+
         self.directory_list = wx.ListBox(self, choices=[])
         self.directory_list.Bind(wx.EVT_LISTBOX_DCLICK, self.on_file_selected)
+        font = wx.Font(
+            12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        self.directory_list.SetFont(font)
 
         # Main Panel Layout
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -34,12 +57,11 @@ class RepoScreen(wx.Panel):
         main_sizer.Add(repo_label, 0, wx.CENTER | wx.EXPAND)
         main_sizer.Add(self.repo_text, 0, wx.CENTER | wx.EXPAND)
         main_sizer.AddSpacer(5)
-        main_sizer.Add(branches_label, 0, wx.CENTER | wx.EXPAND)
-        main_sizer.Add(self.branches_list, 0, wx.CENTER | wx.EXPAND)
+        main_sizer.Add(repo_options, 0, wx.CENTER | wx.EXPAND)
         main_sizer.AddSpacer(5)
-        main_sizer.Add(self.directory_list, 2, wx.CENTER | wx.EXPAND)
+        main_sizer.Add(self.directory_list, 10, wx.CENTER | wx.EXPAND)
 
-        main_sizer.AddStretchSpacer(5)
+        main_sizer.AddStretchSpacer(1)
 
         outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -53,7 +75,9 @@ class RepoScreen(wx.Panel):
     def on_repo_enter(self, _):
         def on_finished(response: Json):
             self.branches_list.Clear()
+            self.branches_list.Append(branches_placeholder)
             self.branches_list.Append(response["branches"])
+            self.branches_list.SetSelection(0)
 
         self.repo = self.repo_text.GetValue()
 
@@ -68,7 +92,10 @@ class RepoScreen(wx.Panel):
     def on_branch_selected(self, _):
         selection = self.branches_list.GetSelection()
         if selection != wx.NOT_FOUND:
-            self.branch = self.branches_list.GetString(selection)
+            branch = self.branches_list.GetString(selection)
+            if branch == branches_placeholder:
+                return
+            self.branch = branch
             self.directory = ""
             self.request_directory_structure()
 
