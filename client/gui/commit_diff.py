@@ -10,6 +10,10 @@ class CommitDiff(wx.Panel):
 
         diff_textctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
 
+        font = wx.Font(
+            14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        diff_textctrl.SetFont(font)
         # Split the string into lines
         lines = diff.split("\n")
 

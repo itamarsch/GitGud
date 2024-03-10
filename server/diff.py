@@ -41,5 +41,4 @@ def get_diff_string(diff: DiffIndex) -> str:
         b_blob = make_diff_str(True, b_blob)
         a_blob = make_diff_str(False, a_blob)
         diff_result.append(f"Modified: {diff_item.b_path}\n" + b_blob + "\n" + a_blob)
-    sep = "—"
-    return ("\n" + (sep * 10) + "\n").join(diff_result)
+    return ("\n" + "───────────────" + "\n").join(diff_result)
