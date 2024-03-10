@@ -69,3 +69,18 @@ class Commit(TypedDict):
     hash: str
     message: str
     authour: str
+
+
+def pack_view_issues(repo: str, connection_token: str) -> Json:
+    return {"type": "viewIssues", "repo": repo, "connectionToken": connection_token}
+
+
+def pack_delete_issue(id: int, connection_token: str) -> Json:
+    return {"type": "deleteIssue", "id": id, "connectionToken": connection_token}
+
+
+class Issue(TypedDict):
+    username: str
+    title: str
+    content: str
+    id: int

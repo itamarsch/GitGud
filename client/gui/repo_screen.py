@@ -3,6 +3,7 @@ from typing import cast
 from gui.commits import Commits
 from main import MainFrame
 from gui.file_screen import FileContent
+from gui.issues import Issues
 from client_protocol import (
     pack_branches,
     pack_file_request,
@@ -41,6 +42,10 @@ class RepoScreen(wx.Panel):
         )
 
         issues_button = wx.Button(self, label="Issues")
+        issues_button.Bind(
+            wx.EVT_BUTTON,
+            self.on_issues_screen_button,
+        )
 
         pull_requests_button = wx.Button(self, label="Pull requests")
 
@@ -120,6 +125,15 @@ class RepoScreen(wx.Panel):
 
         self.GetParent().push_screen(
             Commits(self.GetParent(), self.repo, self.connection_token, self.branch)
+        )
+
+    def on_issues_screen_button(self, _):
+        if not self.repo:
+            wx.MessageBox("Please fill in fields")
+            return
+
+        self.GetParent().push_screen(
+            Issues(self.GetParent(), self.repo, self.connection_token)
         )
 
     def on_file_selected(self, _):
