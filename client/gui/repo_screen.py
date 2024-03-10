@@ -1,7 +1,15 @@
 import wx
-from typing import cast
+from typing import List, cast
+from gui.commits import Commits
+from main import MainFrame
 from gui.file_screen import FileContent
-from client_protocol import pack_branches, pack_file_request, pack_project_directory
+from client_protocol import (
+    Commit,
+    pack_branches,
+    pack_commits,
+    pack_file_request,
+    pack_project_directory,
+)
 from gui.gui_run_request import gui_request_file, gui_run_request
 
 from gitgud_types import Json
@@ -15,6 +23,7 @@ class RepoScreen(wx.Panel):
         self.connection_token = connection_token
         self.directory = ""
         self.branch = ""
+        self.repo = ""
 
         # Username
         repo_label = wx.StaticText(self, label="Repo")
@@ -28,6 +37,10 @@ class RepoScreen(wx.Panel):
         self.branches_list.Bind(wx.EVT_COMBOBOX, self.on_branch_selected)
 
         commits_button = wx.Button(self, label="Commits")
+        commits_button.Bind(
+            wx.EVT_BUTTON,
+            self.on_commits_screen_button,
+        )
 
         issues_button = wx.Button(self, label="Issues")
 
@@ -72,6 +85,9 @@ class RepoScreen(wx.Panel):
 
         self.SetSizerAndFit(outer_sizer)
 
+    def GetParent(self) -> MainFrame:
+        return cast(MainFrame, super().GetParent())
+
     def on_repo_enter(self, _):
         def on_finished(response: Json):
             self.branches_list.Clear()
@@ -98,6 +114,15 @@ class RepoScreen(wx.Panel):
             self.branch = branch
             self.directory = ""
             self.request_directory_structure()
+
+    def on_commits_screen_button(self, _):
+        if not self.repo or not self.branch:
+            wx.MessageBox("Please fill in fields")
+            return
+
+        self.GetParent().push_screen(
+            Commits(self.GetParent(), self.repo, self.connection_token, self.branch)
+        )
 
     def on_file_selected(self, _):
         selection = self.directory_list.GetSelection()

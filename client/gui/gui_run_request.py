@@ -15,7 +15,7 @@ def gui_request_file(
     def run_request(request: Json):
         result = parent.client_com.run_request(request)
         if "error" in result:
-            print(result)
+            wx.CallAfter(wx.MessageBox, f"Error: {result['error']}")
 
         file_content = parent.client_com.file_request(result["token"], result["port"])
         wx.CallAfter(on_finished, file_content)
@@ -34,7 +34,9 @@ def gui_run_request(
     def run_request(request: Json):
         result = parent.client_com.run_request(request)
         if message_box_error and "error" in result:
-            wx.MessageBox(f"Error: {result['error']}")
+
+            wx.CallAfter(wx.MessageBox, f"Error: {result['error']}")
+
         else:
             wx.CallAfter(on_finished, result)
 

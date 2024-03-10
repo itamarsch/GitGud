@@ -1,3 +1,4 @@
+from typing import TypedDict
 from gitgud_types import Json
 
 
@@ -42,3 +43,20 @@ def pack_file_request(repo: str, connection_token: str, file_path: str, branch: 
 
 def pack_validate_token(token: str):
     return {"type": "validateConnection", "tokenForValidation": token}
+
+
+def pack_commits(repo: str, connection_token: str, branch: str, page: int):
+    return {
+        "type": "commits",
+        "repo": repo,
+        "connectionToken": connection_token,
+        "branch": branch,
+        "page": page,
+    }
+
+
+class Commit(TypedDict):
+    date: str
+    hash: str
+    message: str
+    authour: str

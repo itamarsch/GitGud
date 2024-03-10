@@ -36,7 +36,7 @@ from server_comm import FileComm, ServerComm
 from gitgud_types import Action, IssuePr, Json, Address
 from secrets import token_urlsafe
 
-commit_page_size = 30
+commit_page_size = 20
 
 
 class ServerLogic:
@@ -190,7 +190,7 @@ class ServerLogic:
     def branches(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
-        if result is dict:
+        if isinstance(result, dict):
             return result
 
         # Safe to clone, repo exists in database
