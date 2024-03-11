@@ -1,6 +1,9 @@
 import wx
 import hashlib
 from typing import cast
+from client.gui.repo_screen import RepoScreen
+from client.main import MainFrame
+from client.token_file import save_token_file
 import hash_password
 from gitgud_types import Json
 from client_protocol import pack_register
@@ -70,7 +73,11 @@ class RegisterPanel(wx.Panel):
         ssh_key = self.sshkey_text.GetValue()
 
         def on_finished(result: Json):
-            pass
+            token = result["connectionToken"]
+            save_token_file(token)
+            cast(MainFrame, self.GetParent()).change_screen(
+                RepoScreen(self.GetParent(), token)
+            )
 
         gui_run_request(self, pack_register(username, password, ssh_key), on_finished)
 

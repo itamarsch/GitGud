@@ -27,7 +27,6 @@ class IssueViewer(wx.Panel):
         title_sizer.AddStretchSpacer(1)
 
         content = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
-        content.Disable()
 
         content_font = wx.Font(
             17, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
