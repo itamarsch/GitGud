@@ -26,12 +26,7 @@ class FileContent(BaseScreen):
         )
         formatted_content = highlight(self.file_content, lexer, formatter)
 
-        return_button = wx.Button(self, label="Return")
-        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
-
         file_styled_text = cast(wx.html2.WebView, wx.html2.WebView.New(self))
         file_styled_text.SetPage(formatted_content, "")
-
-        main_sizer.Add(return_button, 0, wx.CENTER | wx.EXPAND)
 
         main_sizer.Add(file_styled_text, 15, wx.CENTER | wx.EXPAND)

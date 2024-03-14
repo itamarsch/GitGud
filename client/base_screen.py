@@ -6,7 +6,7 @@ from main import MainFrame
 
 class BaseScreen(wx.Panel):
 
-    def __init__(self, parent, top: int, bottom: int, width: int = 1):
+    def __init__(self, parent, top: int, bottom: int, width: int = 10):
         super().__init__(parent)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
@@ -18,7 +18,16 @@ class BaseScreen(wx.Panel):
 
         outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
 
-        outer_sizer.AddStretchSpacer(1)
+        if self.GetParent().screens:
+
+            return_button_sizer = wx.BoxSizer(wx.VERTICAL)
+            return_button = wx.Button(self, label="🡐")
+            return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
+            return_button_sizer.Add(return_button, 0, wx.LEFT)
+
+            outer_sizer.Add(return_button_sizer, 1, wx.EXPAND)
+        else:
+            outer_sizer.AddStretchSpacer(1)
         outer_sizer.Add(main_sizer, width, wx.CENTER | wx.EXPAND)
         outer_sizer.AddStretchSpacer(1)
 

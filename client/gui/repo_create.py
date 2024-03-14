@@ -30,12 +30,6 @@ class RepoCreate(BaseScreen):
             create_button, flag=wx.ALIGN_RIGHT | wx.TOP | wx.BOTTOM, border=10
         )
 
-        return_button = wx.Button(self, label="Return")
-        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
-        main_sizer.Add(
-            return_button, flag=wx.ALIGN_LEFT | wx.TOP | wx.BOTTOM, border=10
-        )
-
     def on_create(self, _):
         repo_name = self.repo_name_text.GetValue()
         public = self.public_checkbox.GetValue()

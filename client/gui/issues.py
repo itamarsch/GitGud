@@ -20,14 +20,11 @@ class Issues(BaseScreen):
 
     @override
     def add_children(self, main_sizer):
-        return_button = wx.Button(self, label="Return")
-        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
 
         self.issues_list = wx.ListBox(self, choices=[])
         self.issues_list.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
         self.request_issues()
 
-        main_sizer.Add(return_button, 0, wx.LEFT)
         main_sizer.Add(self.issues_list, 15, wx.CENTER | wx.EXPAND)
 
     def on_right_click(self, event):

@@ -13,9 +13,6 @@ class CommitDiff(BaseScreen):
     @override
     def add_children(self, main_sizer):
 
-        return_button = wx.Button(self, label="Return")
-        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
-
         diff_textctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
 
         font = wx.Font(
@@ -37,7 +34,5 @@ class CommitDiff(BaseScreen):
 
         # Main Panel Layout
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-
-        main_sizer.Add(return_button, 0, wx.CENTER | wx.EXPAND)
 
         main_sizer.Add(diff_textctrl, 15, wx.CENTER | wx.EXPAND)

@@ -23,14 +23,10 @@ class Commits(BaseScreen):
     @override
     def add_children(self, main_sizer):
 
-        return_button = wx.Button(self, label="Return")
-        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
-
         self.commits_list = wx.ListBox(self, choices=[])
         self.commits_list.Bind(wx.EVT_LISTBOX_DCLICK, self.on_commit_select)
 
         self.request_commits()
-        main_sizer.Add(return_button, 0, wx.LEFT)
         main_sizer.Add(self.commits_list, 15, wx.CENTER | wx.EXPAND)
 
         pages_buttons = wx.BoxSizer(wx.HORIZONTAL)

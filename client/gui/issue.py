@@ -12,9 +12,6 @@ class IssueViewer(BaseScreen):
     @override
     def add_children(self, main_sizer):
 
-        return_button = wx.Button(self, label="Return")
-        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
-
         title_font = wx.Font(
             20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
@@ -43,7 +40,6 @@ class IssueViewer(BaseScreen):
 
         username = wx.StaticText(self, label=f"By: {self.issue['username']}")
 
-        main_sizer.Add(return_button, 0, wx.CENTER | wx.EXPAND)
         main_sizer.Add(title_sizer, 2, wx.CENTER | wx.EXPAND)
         main_sizer.Add(username, 1)
 

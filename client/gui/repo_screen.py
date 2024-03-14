@@ -50,9 +50,6 @@ class RepoScreen(BaseScreen):
 
         pull_requests_button = wx.Button(self, label="Pull requests")
 
-        return_button = wx.Button(self, label="Return")
-        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
-
         copy_git_url_button = wx.Button(self, label="Copy repo url")
         copy_git_url_button.Bind(wx.EVT_BUTTON, self.copy_repo_url)
 
@@ -61,7 +58,6 @@ class RepoScreen(BaseScreen):
             commits_button,
             issues_button,
             pull_requests_button,
-            return_button,
             copy_git_url_button,
         ]
         for i, widget in enumerate(repo_options_widget):
