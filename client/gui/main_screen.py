@@ -14,11 +14,17 @@ class MainScreen(wx.Panel):
 
         self.connection_token = connection_token
 
+        title = wx.StaticText(self, label="GitGud")
+        title_font = wx.Font(
+            40, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
+        )
+        title.SetFont(title_font)
+
         self.search_box = wx.TextCtrl(self)
         self.search_box.Bind(wx.EVT_TEXT, self.on_text_changed)
         self.search_box.SetHint("Search Repo")
 
-        self.repo_list_box = wx.ListBox(self)
+        self.repo_list_box = wx.ListBox(self, style=wx.LB_NO_SB)
         self.repo_list_box.Bind(wx.EVT_LISTBOX_DCLICK, self.on_search_result_selected)
 
         repo_create_button = wx.Button(self, label="Create repo")
@@ -30,7 +36,7 @@ class MainScreen(wx.Panel):
         )
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.AddStretchSpacer(1)
+        main_sizer.Add(title, 1, wx.CENTER)
         main_sizer.Add(repo_create_button, 0, wx.LEFT)
         main_sizer.Add(self.search_box, 0, wx.EXPAND)
         main_sizer.Add(self.repo_list_box, 0, wx.EXPAND)

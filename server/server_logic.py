@@ -498,8 +498,10 @@ class ServerLogic:
         all_repos = self.db.all_repos()
         names = list(map(lambda a: f"{a[1]}/{a[2]}", all_repos))
         results: List[Tuple[str, int]] = cast(
-            List[Tuple[str, int]], process.extract(request["searchQuery"], names)
+            List[Tuple[str, int]],
+            process.extract(request["searchQuery"], names, limit=10),
         )
+        results = list(filter(lambda a: a[1] > 70, results))
         repo_results = list(map(lambda a: a[0], results))
 
         return pack_search_repo(repo_results)
