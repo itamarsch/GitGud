@@ -19,9 +19,9 @@ class MainFrame(wx.Frame):
         self.SetSizer(self.sizer)
 
         if connection_token:
-            from gui.repo_screen import RepoScreen
+            from gui.main_screen import MainScreen
 
-            self.change_screen(RepoScreen(self, connection_token))
+            self.change_screen(MainScreen(self, connection_token))
         else:
             from gui.register import RegisterPanel
 

@@ -84,3 +84,7 @@ class Issue(TypedDict):
     title: str
     content: str
     id: int
+
+
+def pack_search_repo(query: str):
+    return {"type": "searchRepo", "searchQuery": query}

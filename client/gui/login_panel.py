@@ -1,6 +1,7 @@
 import json
 import wx
 import wx.adv
+from gui.main_screen import MainScreen
 import hash_password
 from typing import cast
 from token_file import save_token_file
@@ -74,7 +75,7 @@ class LoginPanel(wx.Panel):
             token = response["connectionToken"]
             save_token_file(token)
             cast(MainFrame, self.GetParent()).change_screen(
-                RepoScreen(self.GetParent(), token)
+                MainScreen(self.GetParent(), token)
             )
 
         gui_run_request(self, pack_login(username, password), on_finished)

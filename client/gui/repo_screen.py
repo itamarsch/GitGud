@@ -17,16 +17,20 @@ branches_placeholder = "Select a branch"
 
 
 class RepoScreen(wx.Panel):
-    def __init__(self, parent, connection_token: str):
+    def __init__(self, parent, connection_token: str, repo: str = ""):
         super().__init__(parent)
         self.connection_token = connection_token
         self.directory = ""
         self.branch = ""
-        self.repo = ""
+        self.repo = repo
 
         # Username
         repo_label = wx.StaticText(self, label="Repo")
         self.repo_text = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
+
+        if self.repo:
+            self.repo_text.WriteText(self.repo)
+            self.on_repo_enter(None)
 
         self.repo_text.Bind(wx.EVT_TEXT_ENTER, self.on_repo_enter)
 
@@ -49,11 +53,15 @@ class RepoScreen(wx.Panel):
 
         pull_requests_button = wx.Button(self, label="Pull requests")
 
+        return_button = wx.Button(self, label="Return")
+        return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
+
         repo_options_widget = [
             self.branches_list,
             commits_button,
             issues_button,
             pull_requests_button,
+            return_button,
         ]
         for i, widget in enumerate(repo_options_widget):
             repo_options.Add(widget, 1, wx.EXPAND)
