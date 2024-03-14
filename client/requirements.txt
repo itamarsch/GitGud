@@ -1,0 +1,4 @@
+wxPython
+compress
+python-dotenv
+pygemnts
