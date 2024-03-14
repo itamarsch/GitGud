@@ -14,7 +14,7 @@ from gui.gui_run_request import gui_run_request
 class RegisterPanel(BaseScreen):
     def __init__(self, parent):
 
-        super().__init__(parent, 1, 3)
+        super().__init__(parent, 1, 3, 1, title="Register")
 
     @override
     def add_children(self, main_sizer):
@@ -66,11 +66,11 @@ class RegisterPanel(BaseScreen):
         def on_finished(result: Json):
             token = result["connectionToken"]
             save_token_file(token)
-            self.GetParent().change_screen(MainScreen(self.GetParent(), token))
+            self.GetParent().change_screen(lambda: MainScreen(self.GetParent(), token))
 
         gui_run_request(self, pack_register(username, password, ssh_key), on_finished)
 
     def on_login(self, _):
         from gui.login_panel import LoginPanel
 
-        self.GetParent().change_screen(LoginPanel(self.GetParent()))
+        self.GetParent().change_screen(lambda: LoginPanel(self.GetParent()))

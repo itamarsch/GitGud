@@ -32,7 +32,4 @@ class CommitDiff(BaseScreen):
                 diff_textctrl.SetDefaultStyle(wx.TextAttr(wx.NullColour))
             diff_textctrl.AppendText(line + "\n")
 
-        # Main Panel Layout
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-
         main_sizer.Add(diff_textctrl, 15, wx.CENTER | wx.EXPAND)

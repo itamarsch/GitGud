@@ -13,16 +13,10 @@ from gui.gui_run_request import gui_run_request
 class MainScreen(BaseScreen):
     def __init__(self, parent, connection_token: str):
         self.connection_token = connection_token
-        super().__init__(parent, 0, 5)
+        super().__init__(parent, 1, 5, 1, title="GitGud")
 
     @override
     def add_children(self, main_sizer):
-
-        title = wx.StaticText(self, label="GitGud")
-        title_font = wx.Font(
-            40, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
-        )
-        title.SetFont(title_font)
 
         self.search_box = wx.TextCtrl(self)
         self.search_box.Bind(wx.EVT_TEXT, self.on_text_changed)
@@ -35,11 +29,10 @@ class MainScreen(BaseScreen):
         repo_create_button.Bind(
             wx.EVT_BUTTON,
             lambda _: self.GetParent().push_screen(
-                RepoCreate(self.GetParent(), self.connection_token)
+                lambda: RepoCreate(self.GetParent(), self.connection_token)
             ),
         )
 
-        main_sizer.Add(title, 1, wx.CENTER)
         main_sizer.Add(repo_create_button, 0, wx.LEFT)
         main_sizer.Add(self.search_box, 0, wx.EXPAND)
         main_sizer.Add(self.repo_list_box, 0, wx.EXPAND)
@@ -50,7 +43,7 @@ class MainScreen(BaseScreen):
         if selection != wx.NOT_FOUND:
             repo = self.repo_list_box.GetString(selection)
             self.GetParent().push_screen(
-                RepoScreen(self.GetParent(), self.connection_token, repo=repo)
+                lambda: RepoScreen(self.GetParent(), self.connection_token, repo=repo)
             )
 
     def on_text_changed(self, event):

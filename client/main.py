@@ -3,7 +3,7 @@ import os
 from token_file import read_token_file
 from client_comm import ClientComm
 from client_protocol import pack_validate_token
-from typing import Optional, cast, List
+from typing import Callable, Optional, cast, List
 from dotenv import load_dotenv
 
 
@@ -21,21 +21,24 @@ class MainFrame(wx.Frame):
         if connection_token:
             from gui.main_screen import MainScreen
 
-            self.change_screen(MainScreen(self, connection_token))
+            self.push_screen(lambda: MainScreen(self, connection_token))
         else:
             from gui.register import RegisterPanel
 
-            self.change_screen(RegisterPanel(self))
+            self.push_screen(lambda: RegisterPanel(self))
         self.Maximize()
 
         self.Show()
 
-    def push_screen(self, screen: wx.Panel):
+    def push_screen(self, screen_fn: Callable[[], wx.Panel]):
         if self.screens:
             self.screens[-1].Hide()
             self.sizer.Remove(0)
-        self.screens.append(screen)
-        self.sizer.Add(screen, 1, wx.EXPAND)
+
+        self.screens.append(cast(wx.Panel, None))
+        self.screens[-1] = screen_fn()
+
+        self.sizer.Add(self.screens[-1], 1, wx.EXPAND)
         self.SetSizer(self.sizer)
         self.Layout()
 
@@ -48,10 +51,14 @@ class MainFrame(wx.Frame):
         self.SetSizer(self.sizer)
         self.Layout()
 
-    def change_screen(self, panel):
-        self.push_screen(panel)
-        if len(self.screens) > 1:
-            del self.screens[-2]
+    def change_screen(self, panel: Callable[[], wx.Panel]):
+        self.screens[-1].Hide()
+        self.screens[-1] = panel()
+        self.screens[-1].Show()
+        self.sizer.Remove(0)
+        self.SetSizer(self.sizer)
+        self.Layout()
+        self.sizer.Add(self.screens[-1], 1, wx.EXPAND)
 
 
 if __name__ == "__main__":

@@ -23,7 +23,7 @@ class RepoScreen(BaseScreen):
         self.directory = ""
         self.branch = ""
         self.repo = repo
-        super().__init__(parent, 1, 1)
+        super().__init__(parent, 1, 1, title="Repo")
 
     @override
     def add_children(self, main_sizer):
@@ -110,7 +110,9 @@ class RepoScreen(BaseScreen):
             return
 
         self.GetParent().push_screen(
-            Commits(self.GetParent(), self.repo, self.connection_token, self.branch)
+            lambda: Commits(
+                self.GetParent(), self.repo, self.connection_token, self.branch
+            )
         )
 
     def on_issues_screen_button(self, _):
@@ -119,7 +121,7 @@ class RepoScreen(BaseScreen):
             return
 
         self.GetParent().push_screen(
-            Issues(self.GetParent(), self.repo, self.connection_token)
+            lambda: Issues(self.GetParent(), self.repo, self.connection_token)
         )
 
     def copy_repo_url(self, _):
@@ -140,7 +142,9 @@ class RepoScreen(BaseScreen):
                 try:
                     file_content_str = result.decode()
                     self.GetParent().push_screen(
-                        FileContent(self.GetParent(), file_content_str, file_name)
+                        lambda: FileContent(
+                            self.GetParent(), file_content_str, file_name
+                        )
                     )
                 except (UnicodeDecodeError, AttributeError):
                     wx.MessageBox("File not string :(")

@@ -11,7 +11,7 @@ from gui.repo_screen import RepoScreen
 class RepoCreate(BaseScreen):
     def __init__(self, parent, connection_token: str):
         self.connection_token = connection_token
-        super().__init__(parent, 1, 3)
+        super().__init__(parent, 1, 3, 1, title="Create Repo")
 
     @override
     def add_children(self, main_sizer: wx.BoxSizer):
@@ -37,7 +37,9 @@ class RepoCreate(BaseScreen):
         def on_finished(result: Json):
             full_repo_name = result["fullRepoName"]
             self.GetParent().push_screen(
-                RepoScreen(self.GetParent(), self.connection_token, full_repo_name)
+                lambda: RepoScreen(
+                    self.GetParent(), self.connection_token, full_repo_name
+                )
             )
 
         gui_run_request(

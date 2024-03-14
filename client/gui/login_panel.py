@@ -15,7 +15,7 @@ from gui.gui_run_request import gui_run_request
 
 class LoginPanel(BaseScreen):
     def __init__(self, parent):
-        super().__init__(parent, 1, 3)
+        super().__init__(parent, 1, 3, 1, title="Login")
 
     @override
     def add_children(self, main_sizer):
@@ -52,7 +52,7 @@ class LoginPanel(BaseScreen):
     def sign_up(self, _):
         from gui.register import RegisterPanel
 
-        self.Parent.change_screen(RegisterPanel(self.GetParent()))
+        self.GetParent().change_screen(lambda: RegisterPanel(self.GetParent()))
 
     def on_login(self, _):
         username = self.username_text.GetValue()
@@ -61,8 +61,6 @@ class LoginPanel(BaseScreen):
         def on_finished(response: Json):
             token = response["connectionToken"]
             save_token_file(token)
-            cast(MainFrame, self.GetParent()).change_screen(
-                MainScreen(self.GetParent(), token)
-            )
+            self.GetParent().change_screen(lambda: MainScreen(self.GetParent(), token))
 
         gui_run_request(self, pack_login(username, password), on_finished)

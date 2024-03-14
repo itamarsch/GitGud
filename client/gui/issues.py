@@ -16,7 +16,7 @@ class Issues(BaseScreen):
         self.connection_token = connection_token
 
         self.issues: List[Issue] = []
-        super().__init__(parent, 1, 1)
+        super().__init__(parent, 1, 1, title="Issues")
 
     @override
     def add_children(self, main_sizer):
@@ -59,7 +59,7 @@ class Issues(BaseScreen):
         issue_index = self.issues_list.GetSelection()
         issue = cast(Issue, self.issues[issue_index])
 
-        self.GetParent().push_screen(IssueViewer(self.GetParent(), issue))
+        self.GetParent().push_screen(lambda: IssueViewer(self.GetParent(), issue))
 
     def request_issues(self):
         def on_finished(result: Json):

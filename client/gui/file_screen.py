@@ -13,7 +13,7 @@ class FileContent(BaseScreen):
     def __init__(self, parent, file_content: str, file_name: str):
         self.file_content = file_content
         self.file_name = file_name
-        super().__init__(parent, 0, 1)
+        super().__init__(parent, 0, 0)
 
     @override
     def add_children(self, main_sizer):

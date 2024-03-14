@@ -18,7 +18,7 @@ class Commits(BaseScreen):
         self.branch = branch
         self.page = 0
         self.commits: List[Commit] = []
-        super().__init__(parent, 1, 1)
+        super().__init__(parent, 1, 1, title="Commits")
 
     @override
     def add_children(self, main_sizer):
@@ -61,7 +61,9 @@ class Commits(BaseScreen):
         commit = cast(Commit, self.commits[index])
 
         def on_finished(diff: bytes):
-            self.GetParent().push_screen(CommitDiff(self.GetParent(), diff.decode()))
+            self.GetParent().push_screen(
+                lambda: CommitDiff(self.GetParent(), diff.decode())
+            )
 
         gui_request_file(
             self,
