@@ -30,8 +30,8 @@ def pack_login(connection_token: str) -> Json:
     return {"connectionToken": connection_token}
 
 
-def pack_create_repo() -> Json:
-    return {}
+def pack_create_repo(full_repo_name: str) -> Json:
+    return {"fullRepoName": full_repo_name}
 
 
 def pack_branches(branches: List[str]) -> Json:

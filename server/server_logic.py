@@ -188,7 +188,7 @@ class ServerLogic:
         self.db.add_repo(id, repo_name, visibility)
         self.git_manager.create_repo(repo_name, username, visibility)
 
-        return pack_create_repo()
+        return pack_create_repo(f"{username}/{repo_name}")
 
     def branches(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])

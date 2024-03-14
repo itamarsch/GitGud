@@ -88,3 +88,12 @@ class Issue(TypedDict):
 
 def pack_search_repo(query: str):
     return {"type": "searchRepo", "searchQuery": query}
+
+
+def pack_create_repo(repo_name: str, is_public: bool, connection_token: str):
+    return {
+        "type": "createRepo",
+        "repoName": repo_name,
+        "visibility": is_public,
+        "connectionToken": connection_token,
+    }
