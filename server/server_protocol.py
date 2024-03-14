@@ -108,3 +108,7 @@ def pack_update_pr() -> Json:
 
 def pack_validate_password(valid: bool) -> Json:
     return {"valid": valid}
+
+
+def pack_search_repo(repos: List[str]) -> Json:
+    return {"repos": repos}

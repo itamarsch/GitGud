@@ -177,7 +177,7 @@ where repo_id = %s
         password_hash_db: str = cast(str, password_res[0])
         return password_hash == password_hash_db
 
-    def search_repos(self, search_query: str) -> List[Tuple[int, str, str]]:
+    def all_repos(self) -> List[Tuple[int, str, str]]:
         """
         Returns all repositorys that fit search query in format: id, creator_name, repository_name
         """
@@ -187,9 +187,8 @@ where repo_id = %s
 SELECT "Repository".id, "User".username, "Repository".name
 from "Repository" 
 INNER JOIN "User" on "Repository".user_id="User".id
-where "Repository".name LIKE %s and "Repository".public
+where "Repository".public
 """,
-            (search_query,),
         )
 
         return cast(
@@ -252,4 +251,3 @@ WHERE "PullRequest".id = %s
 if __name__ == "__main__":
     load_dotenv()
     db = DB()
-    print(db.search_repos("Git___"))

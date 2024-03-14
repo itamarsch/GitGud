@@ -97,8 +97,8 @@ if __name__ == "__main__":
     connection_token = login_res["connectionToken"]
 
     create_pr = {
-        "type": "validateConnection",
-        "tokenForValidation": connection_token[1:],
+        "type": "searchRepo",
+        "searchQuery": "Hell",
     }
 
     result = client.run_request(create_pr)

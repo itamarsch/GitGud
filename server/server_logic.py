@@ -23,6 +23,7 @@ from server_protocol import (
     pack_project_dirs,
     pack_pull_request,
     pack_register,
+    pack_search_repo,
     pack_update_issue,
     pack_update_pr,
     pack_validate_password,
@@ -35,6 +36,7 @@ from git import GitCommandError, Repo
 from server_comm import FileComm, ServerComm
 from gitgud_types import Action, IssuePr, Json, Address
 from secrets import token_urlsafe
+from fuzzywuzzy import process
 
 commit_page_size = 20
 
@@ -122,6 +124,7 @@ class ServerLogic:
             ),
             "prDiff": (self.pr_diff, ["connectionToken", "prId"]),
             "validateConnection": (self.validate_connection, ["tokenForValidation"]),
+            "searchRepo": (self.search_repo, ["searchQuery"]),
         }
 
     def generate_new_connection_token(self, username: str) -> str:
@@ -490,6 +493,16 @@ class ServerLogic:
         return pack_validate_password(
             request["tokenForValidation"] in self.connected_client
         )
+
+    def search_repo(self, request: Json) -> Json:
+        all_repos = self.db.all_repos()
+        names = list(map(lambda a: f"{a[1]}/{a[2]}", all_repos))
+        results: List[Tuple[str, int]] = cast(
+            List[Tuple[str, int]], process.extract(request["searchQuery"], names)
+        )
+        repo_results = list(map(lambda a: a[0], results))
+
+        return pack_search_repo(repo_results)
 
 
 def branches_of_repo(repo: Repo) -> List[str]:
