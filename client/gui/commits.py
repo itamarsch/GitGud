@@ -1,6 +1,8 @@
+from typing_extensions import override
 import wx
 import wx.html2
 from typing import Callable, List, cast
+from base_screen import BaseScreen
 from gui.commit_diff import CommitDiff
 from gitgud_types import Json
 from gui.gui_run_request import gui_request_file, gui_run_request
@@ -8,16 +10,18 @@ from gui.gui_run_request import gui_request_file, gui_run_request
 from client_protocol import Commit, pack_commits, pack_diff
 
 
-class Commits(wx.Panel):
+class Commits(BaseScreen):
     def __init__(self, parent, repo: str, connection_token: str, branch: str):
-        super().__init__(parent)
 
         self.repo = repo
         self.connection_token = connection_token
         self.branch = branch
         self.page = 0
         self.commits: List[Commit] = []
-        self.request_commits()
+        super().__init__(parent, 1, 1)
+
+    @override
+    def add_children(self, main_sizer):
 
         return_button = wx.Button(self, label="Return")
         return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
@@ -25,10 +29,7 @@ class Commits(wx.Panel):
         self.commits_list = wx.ListBox(self, choices=[])
         self.commits_list.Bind(wx.EVT_LISTBOX_DCLICK, self.on_commit_select)
 
-        # Main Panel Layout
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.AddStretchSpacer(1)
-
+        self.request_commits()
         main_sizer.Add(return_button, 0, wx.LEFT)
         main_sizer.Add(self.commits_list, 15, wx.CENTER | wx.EXPAND)
 
@@ -51,15 +52,6 @@ class Commits(wx.Panel):
         pages_buttons.AddStretchSpacer(3)
 
         main_sizer.Add(pages_buttons, 1, wx.CENTER | wx.EXPAND)
-
-        main_sizer.AddStretchSpacer(1)
-
-        outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
-        outer_sizer.AddStretchSpacer(1)
-        outer_sizer.Add(main_sizer, 8, wx.CENTER | wx.EXPAND)
-        outer_sizer.AddStretchSpacer(1)
-
-        self.SetSizerAndFit(outer_sizer)
 
     def change_page(self, page: int):
         self.page = page

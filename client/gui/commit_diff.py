@@ -1,9 +1,17 @@
+from typing_extensions import override
 import wx
 
+from base_screen import BaseScreen
 
-class CommitDiff(wx.Panel):
+
+class CommitDiff(BaseScreen):
     def __init__(self, parent, diff: str):
-        super().__init__(parent)
+
+        self.diff = diff
+        super().__init__(parent, 0, 1)
+
+    @override
+    def add_children(self, main_sizer):
 
         return_button = wx.Button(self, label="Return")
         return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
@@ -15,7 +23,7 @@ class CommitDiff(wx.Panel):
         )
         diff_textctrl.SetFont(font)
         # Split the string into lines
-        lines = diff.split("\n")
+        lines = self.diff.split("\n")
 
         # Iterate over the lines and set background color based on starting character
         for line in lines:
@@ -33,14 +41,3 @@ class CommitDiff(wx.Panel):
         main_sizer.Add(return_button, 0, wx.CENTER | wx.EXPAND)
 
         main_sizer.Add(diff_textctrl, 15, wx.CENTER | wx.EXPAND)
-        main_sizer.AddStretchSpacer(1)
-
-        outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        outer_sizer.AddStretchSpacer(1)
-
-        outer_sizer.Add(main_sizer, 10, wx.CENTER | wx.EXPAND)
-
-        outer_sizer.AddStretchSpacer(1)
-
-        self.SetSizerAndFit(outer_sizer)

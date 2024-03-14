@@ -1,10 +1,16 @@
+from typing_extensions import override
 import wx
+from base_screen import BaseScreen
 from client_protocol import Issue
 
 
-class IssueViewer(wx.Panel):
+class IssueViewer(BaseScreen):
     def __init__(self, parent, issue: Issue):
-        super().__init__(parent)
+        self.issue = issue
+        super().__init__(parent, 0, 1)
+
+    @override
+    def add_children(self, main_sizer):
 
         return_button = wx.Button(self, label="Return")
         return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
@@ -19,7 +25,7 @@ class IssueViewer(wx.Panel):
 
         title = wx.StaticText(self)
         title.SetFont(title_font)
-        title.SetLabel(issue["title"])
+        title.SetLabel(self.issue["title"])
         title.Center()
 
         title_sizer.Add(title, 0, wx.EXPAND)
@@ -33,25 +39,12 @@ class IssueViewer(wx.Panel):
         )
 
         content.SetFont(content_font)
-        content.WriteText(issue["content"])
+        content.WriteText(self.issue["content"])
 
-        username = wx.StaticText(self, label=f"By: {issue['username']}")
-
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
+        username = wx.StaticText(self, label=f"By: {self.issue['username']}")
 
         main_sizer.Add(return_button, 0, wx.CENTER | wx.EXPAND)
         main_sizer.Add(title_sizer, 2, wx.CENTER | wx.EXPAND)
         main_sizer.Add(username, 1)
 
         main_sizer.Add(content, 15, wx.CENTER | wx.EXPAND)
-        main_sizer.AddStretchSpacer(1)
-
-        outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        outer_sizer.AddStretchSpacer(1)
-
-        outer_sizer.Add(main_sizer, 10, wx.CENTER | wx.EXPAND)
-
-        outer_sizer.AddStretchSpacer(1)
-
-        self.SetSizerAndFit(outer_sizer)

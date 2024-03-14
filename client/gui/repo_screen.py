@@ -1,7 +1,8 @@
+from typing_extensions import override
 import wx
 from typing import cast
+from base_screen import BaseScreen
 from gui.commits import Commits
-from main import MainFrame
 from gui.file_screen import FileContent
 from gui.issues import Issues
 from client_protocol import (
@@ -16,14 +17,16 @@ from gitgud_types import Json
 branches_placeholder = "Select a branch"
 
 
-class RepoScreen(wx.Panel):
+class RepoScreen(BaseScreen):
     def __init__(self, parent, connection_token: str, repo: str = ""):
-        super().__init__(parent)
         self.connection_token = connection_token
         self.directory = ""
         self.branch = ""
         self.repo = repo
+        super().__init__(parent, 1, 1)
 
+    @override
+    def add_children(self, main_sizer):
         # Username
         repo_label = wx.StaticText(self, label="Repo")
         self.repo_text = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
@@ -40,16 +43,10 @@ class RepoScreen(wx.Panel):
         self.branches_list.Bind(wx.EVT_COMBOBOX, self.on_branch_selected)
 
         commits_button = wx.Button(self, label="Commits")
-        commits_button.Bind(
-            wx.EVT_BUTTON,
-            self.on_commits_screen_button,
-        )
+        commits_button.Bind(wx.EVT_BUTTON, self.on_commits_screen_button)
 
         issues_button = wx.Button(self, label="Issues")
-        issues_button.Bind(
-            wx.EVT_BUTTON,
-            self.on_issues_screen_button,
-        )
+        issues_button.Bind(wx.EVT_BUTTON, self.on_issues_screen_button)
 
         pull_requests_button = wx.Button(self, label="Pull requests")
 
@@ -79,29 +76,12 @@ class RepoScreen(wx.Panel):
         )
         self.directory_list.SetFont(font)
 
-        # Main Panel Layout
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.AddStretchSpacer(1)
         main_sizer.Add(repo_label, 0, wx.CENTER | wx.EXPAND)
         main_sizer.Add(self.repo_text, 0, wx.CENTER | wx.EXPAND)
         main_sizer.AddSpacer(5)
         main_sizer.Add(repo_options, 0, wx.CENTER | wx.EXPAND)
         main_sizer.AddSpacer(5)
         main_sizer.Add(self.directory_list, 10, wx.CENTER | wx.EXPAND)
-
-        main_sizer.AddStretchSpacer(1)
-
-        outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        outer_sizer.AddStretchSpacer(1)
-        outer_sizer.Add(main_sizer, 8, wx.CENTER | wx.EXPAND)
-
-        outer_sizer.AddStretchSpacer(1)
-
-        self.SetSizerAndFit(outer_sizer)
-
-    def GetParent(self) -> MainFrame:
-        return cast(MainFrame, super().GetParent())
 
     def on_repo_enter(self, _):
         def on_finished(response: Json):
@@ -117,8 +97,6 @@ class RepoScreen(wx.Panel):
             pack_branches(self.repo, self.connection_token),
             on_finished,
         )
-
-        pass
 
     def on_branch_selected(self, _):
         selection = self.branches_list.GetSelection()

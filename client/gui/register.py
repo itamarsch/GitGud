@@ -1,9 +1,8 @@
+from typing_extensions import override
 import wx
-import hashlib
 from typing import cast
+from base_screen import BaseScreen
 from gui.main_screen import MainScreen
-from gui.repo_screen import RepoScreen
-from main import MainFrame
 from token_file import save_token_file
 import hash_password
 from gitgud_types import Json
@@ -12,10 +11,13 @@ from client_protocol import pack_register
 from gui.gui_run_request import gui_run_request
 
 
-class RegisterPanel(wx.Panel):
+class RegisterPanel(BaseScreen):
     def __init__(self, parent):
 
-        super().__init__(parent)
+        super().__init__(parent, 1, 3)
+
+    @override
+    def add_children(self, main_sizer):
 
         # Username
         username_label = wx.StaticText(self, label="Username:")
@@ -42,8 +44,6 @@ class RegisterPanel(wx.Panel):
         login_button = wx.Button(self, label="Already have an account")
         login_button.Bind(wx.EVT_BUTTON, self.on_login)
         # Main Panel Layout
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
-        main_sizer.AddStretchSpacer(1)
         main_sizer.Add(username_label, 0, wx.CENTER | wx.EXPAND)
         main_sizer.Add(self.username_text, 0, wx.CENTER | wx.EXPAND)
         main_sizer.AddSpacer(5)
@@ -57,18 +57,8 @@ class RegisterPanel(wx.Panel):
         main_sizer.Add(register_button, 0, wx.CENTER | wx.EXPAND)
         main_sizer.AddSpacer(5)
         main_sizer.Add(login_button, 0, wx.CENTER | wx.EXPAND)
-        main_sizer.AddStretchSpacer(3)
 
-        outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        outer_sizer.AddStretchSpacer(1)
-        outer_sizer.Add(main_sizer, 1, wx.CENTER | wx.EXPAND)
-
-        outer_sizer.AddStretchSpacer(1)
-
-        self.SetSizerAndFit(outer_sizer)
-
-    def on_register(self, event):
+    def on_register(self, _):
         username = self.username_text.GetValue()
         password = hash_password.hash(self.password_text.GetValue())
         ssh_key = self.sshkey_text.GetValue()
@@ -76,13 +66,11 @@ class RegisterPanel(wx.Panel):
         def on_finished(result: Json):
             token = result["connectionToken"]
             save_token_file(token)
-            cast(MainFrame, self.GetParent()).change_screen(
-                MainScreen(self.GetParent(), token)
-            )
+            self.GetParent().change_screen(MainScreen(self.GetParent(), token))
 
         gui_run_request(self, pack_register(username, password, ssh_key), on_finished)
 
-    def on_login(self, event):
+    def on_login(self, _):
         from gui.login_panel import LoginPanel
 
-        self.Parent.change_screen(LoginPanel(self.GetParent()))
+        self.GetParent().change_screen(LoginPanel(self.GetParent()))

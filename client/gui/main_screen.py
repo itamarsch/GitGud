@@ -1,5 +1,7 @@
 from typing import List
+from typing_extensions import override
 import wx
+from base_screen import BaseScreen
 from gui.repo_create import RepoCreate
 from gui.repo_screen import RepoScreen
 from client_protocol import pack_search_repo
@@ -8,11 +10,13 @@ from gitgud_types import Json
 from gui.gui_run_request import gui_run_request
 
 
-class MainScreen(wx.Panel):
+class MainScreen(BaseScreen):
     def __init__(self, parent, connection_token: str):
-        super().__init__(parent)
-
         self.connection_token = connection_token
+        super().__init__(parent, 0, 5)
+
+    @override
+    def add_children(self, main_sizer):
 
         title = wx.StaticText(self, label="GitGud")
         title_font = wx.Font(
@@ -35,24 +39,12 @@ class MainScreen(wx.Panel):
             ),
         )
 
-        main_sizer = wx.BoxSizer(wx.VERTICAL)
         main_sizer.Add(title, 1, wx.CENTER)
         main_sizer.Add(repo_create_button, 0, wx.LEFT)
         main_sizer.Add(self.search_box, 0, wx.EXPAND)
         main_sizer.Add(self.repo_list_box, 0, wx.EXPAND)
 
-        main_sizer.AddStretchSpacer(5)
-
-        outer_sizer = wx.BoxSizer(wx.HORIZONTAL)
-
-        outer_sizer.AddStretchSpacer(1)
-        outer_sizer.Add(main_sizer, 1, wx.CENTER | wx.EXPAND)
-
-        outer_sizer.AddStretchSpacer(1)
-
-        self.SetSizerAndFit(outer_sizer)
-
-    def on_search_result_selected(self, event):
+    def on_search_result_selected(self, _):
 
         selection = self.repo_list_box.GetSelection()
         if selection != wx.NOT_FOUND:

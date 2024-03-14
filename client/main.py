@@ -3,7 +3,7 @@ import os
 from token_file import read_token_file
 from client_comm import ClientComm
 from client_protocol import pack_validate_token
-from typing import Optional, cast
+from typing import Optional, cast, List
 from dotenv import load_dotenv
 
 
@@ -13,7 +13,7 @@ class MainFrame(wx.Frame):
         super().__init__(None, title="GitGud")
 
         self.client_com = client_com
-        self.screens = []
+        self.screens: List[wx.Panel] = []
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -30,7 +30,7 @@ class MainFrame(wx.Frame):
 
         self.Show()
 
-    def push_screen(self, screen):
+    def push_screen(self, screen: wx.Panel):
         if self.screens:
             self.screens[-1].Hide()
             self.sizer.Remove(0)
