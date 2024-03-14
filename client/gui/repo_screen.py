@@ -10,7 +10,7 @@ from client_protocol import (
     pack_project_directory,
 )
 from gui.gui_run_request import gui_request_file, gui_run_request
-
+import pyperclip
 from gitgud_types import Json
 
 branches_placeholder = "Select a branch"
@@ -56,12 +56,16 @@ class RepoScreen(wx.Panel):
         return_button = wx.Button(self, label="Return")
         return_button.Bind(wx.EVT_BUTTON, lambda _: self.GetParent().pop_screen())
 
+        copy_git_url_button = wx.Button(self, label="Copy repo url")
+        copy_git_url_button.Bind(wx.EVT_BUTTON, self.copy_repo_url)
+
         repo_options_widget = [
             self.branches_list,
             commits_button,
             issues_button,
             pull_requests_button,
             return_button,
+            copy_git_url_button,
         ]
         for i, widget in enumerate(repo_options_widget):
             repo_options.Add(widget, 1, wx.EXPAND)
@@ -143,6 +147,10 @@ class RepoScreen(wx.Panel):
         self.GetParent().push_screen(
             Issues(self.GetParent(), self.repo, self.connection_token)
         )
+
+    def copy_repo_url(self, _):
+        if self.repo:
+            pyperclip.copy(f"git@itamarfedora:{self.repo}.git")
 
     def on_file_selected(self, _):
         selection = self.directory_list.GetSelection()
