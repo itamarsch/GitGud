@@ -9,7 +9,7 @@ class BaseScreen(wx.Panel):
 
     def __init__(
         self,
-        parent,
+        parent: MainFrame,
         top: int,
         bottom: int,
         width: int = 10,

@@ -5,13 +5,14 @@ from typing import Callable, List, cast
 from base_screen import BaseScreen
 from gui.issue import IssueViewer
 from gitgud_types import Json
-from gui.gui_run_request import gui_run_request
+from gui_run_request import gui_run_request
 
 from client_protocol import Issue, pack_delete_issue, pack_view_issues
+from main import MainFrame
 
 
 class Issues(BaseScreen):
-    def __init__(self, parent, repo: str, connection_token: str):
+    def __init__(self, parent: MainFrame, repo: str, connection_token: str):
         self.repo = repo
         self.connection_token = connection_token
 

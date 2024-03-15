@@ -10,15 +10,16 @@ from client_protocol import (
     pack_file_request,
     pack_project_directory,
 )
-from gui.gui_run_request import gui_request_file, gui_run_request
+from gui_run_request import gui_request_file, gui_run_request
 import pyperclip
 from gitgud_types import Json
+from main import MainFrame
 
 branches_placeholder = "Select a branch"
 
 
 class RepoScreen(BaseScreen):
-    def __init__(self, parent, connection_token: str, repo: str = ""):
+    def __init__(self, parent: MainFrame, connection_token: str, repo: str = ""):
         self.connection_token = connection_token
         self.directory = ""
         self.branch = ""

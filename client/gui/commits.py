@@ -5,13 +5,16 @@ from typing import Callable, List, cast
 from base_screen import BaseScreen
 from gui.commit_diff import CommitDiff
 from gitgud_types import Json
-from gui.gui_run_request import gui_request_file, gui_run_request
+from gui_run_request import gui_request_file, gui_run_request
 
 from client_protocol import Commit, pack_commits, pack_diff
+from main import MainFrame
 
 
 class Commits(BaseScreen):
-    def __init__(self, parent, repo: str, connection_token: str, branch: str):
+    def __init__(
+        self, parent: MainFrame, repo: str, connection_token: str, branch: str
+    ):
 
         self.repo = repo
         self.connection_token = connection_token

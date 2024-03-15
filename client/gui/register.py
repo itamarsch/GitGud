@@ -3,16 +3,17 @@ import wx
 from typing import cast
 from base_screen import BaseScreen
 from gui.main_screen import MainScreen
+from main import MainFrame
 from token_file import save_token_file
 import hash_password
 from gitgud_types import Json
 from client_protocol import pack_register
 
-from gui.gui_run_request import gui_run_request
+from  import gui_run_request
 
 
 class RegisterPanel(BaseScreen):
-    def __init__(self, parent):
+    def __init__(self, parent: MainFrame):
 
         super().__init__(parent, 1, 3, 1, title="Register")
 

@@ -6,12 +6,13 @@ from gui.repo_create import RepoCreate
 from gui.repo_screen import RepoScreen
 from client_protocol import pack_search_repo
 from gitgud_types import Json
+from gui_run_request import gui_run_request
 
-from gui.gui_run_request import gui_run_request
+from main import MainFrame
 
 
 class MainScreen(BaseScreen):
-    def __init__(self, parent, connection_token: str):
+    def __init__(self, parent: MainFrame, connection_token: str):
         self.connection_token = connection_token
         super().__init__(parent, 1, 5, 1, title="GitGud")
 

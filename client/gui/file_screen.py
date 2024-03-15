@@ -1,16 +1,32 @@
 from typing_extensions import override
+import pygments.util
 import wx
 import wx.html2
 from typing import cast
 from pygments import highlight
+from pygments.lexer import RegexLexer
+from pygments.token import Text
 from pygments.lexers import get_lexer_for_filename
 from pygments.formatters import HtmlFormatter
 
 from base_screen import BaseScreen
+from main import MainFrame
+
+
+class NoopLexer(RegexLexer):
+    name = "null"
+    aliases = []
+    filenames = []
+
+    tokens = {
+        "root": [
+            (r".+", Text),  # Match anything as Text
+        ],
+    }
 
 
 class FileContent(BaseScreen):
-    def __init__(self, parent, file_content: str, file_name: str):
+    def __init__(self, parent: MainFrame, file_content: str, file_name: str):
         self.file_content = file_content
         self.file_name = file_name
         super().__init__(parent, 0, 0)
@@ -18,7 +34,10 @@ class FileContent(BaseScreen):
     @override
     def add_children(self, main_sizer):
 
-        lexer = get_lexer_for_filename(self.file_name)
+        try:
+            lexer = get_lexer_for_filename(self.file_name)
+        except pygments.util.ClassNotFound:
+            lexer = NoopLexer()
 
         # python -c "from pygments.styles import get_all_styles; styles = list(get_all_styles()); print(*styles, sep='\n')"
         formatter = HtmlFormatter(

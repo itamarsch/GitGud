@@ -3,18 +3,16 @@ import wx
 import wx.adv
 from base_screen import BaseScreen
 from gui.main_screen import MainScreen
+from gui_run_request import gui_run_request
 import hash_password
-from typing import cast
-from token_file import save_token_file
 from main import MainFrame
+from token_file import save_token_file
 from client_protocol import pack_login
 from gitgud_types import Json
 
-from gui.gui_run_request import gui_run_request
-
 
 class LoginPanel(BaseScreen):
-    def __init__(self, parent):
+    def __init__(self, parent: MainFrame):
         super().__init__(parent, 1, 3, 1, title="Login")
 
     @override

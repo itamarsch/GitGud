@@ -2,10 +2,11 @@ from typing_extensions import override
 import wx
 from base_screen import BaseScreen
 from client_protocol import Issue
+from main import MainFrame
 
 
 class IssueViewer(BaseScreen):
-    def __init__(self, parent, issue: Issue):
+    def __init__(self, parent: MainFrame, issue: Issue):
         self.issue = issue
         super().__init__(parent, 2, 1, title=self.issue["title"])
 

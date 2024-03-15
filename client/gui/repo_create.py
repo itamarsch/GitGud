@@ -4,12 +4,13 @@ from base_screen import BaseScreen
 from client_protocol import pack_create_repo
 from gitgud_types import Json
 
-from gui.gui_run_request import gui_run_request
+from gui_run_request import gui_run_request
 from gui.repo_screen import RepoScreen
+from main import MainFrame
 
 
 class RepoCreate(BaseScreen):
-    def __init__(self, parent, connection_token: str):
+    def __init__(self, parent: MainFrame, connection_token: str):
         self.connection_token = connection_token
         super().__init__(parent, 1, 3, 1, title="Create Repo")
 
