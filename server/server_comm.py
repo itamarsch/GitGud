@@ -1,6 +1,6 @@
 import socket
 from threading import Thread
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 from queue import Queue
 from encryption import EncryptionState
 import select
@@ -87,13 +87,11 @@ class ServerComm:
         self.logic_queue = queue
         self.running = False
 
-    def _get_addr_of_socket(self, soc: socket.socket) -> Address:
+    def _get_addr_of_socket(self, soc: socket.socket) -> Optional[Address]:
         for k, v in self.open_sockets.items():
             if v[0] is soc:
                 return k
-        raise Exception(
-            "Invalid socket, shouldn't happen because rlist only contains known sockets"
-        )
+        return None
 
     def _listen(self, port: int):
         self.server_socket.bind(("0.0.0.0", port))
@@ -123,6 +121,9 @@ class ServerComm:
                     continue
             else:
                 addr = self._get_addr_of_socket(soc)
+                if not addr:
+                    continue
+
                 if self.open_sockets[addr][1].finished_encryption():
                     self._on_message_receive(soc, addr)
                 else:
