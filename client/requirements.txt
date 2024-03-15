@@ -1,4 +1,6 @@
 wxPython
 compress
 python-dotenv
-pygemnts
+pygments
+cryptography
+pyperclip

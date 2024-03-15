@@ -1,4 +1,13 @@
-from typing import TypedDict
+import sys
+
+if sys.version_info[0] == 3 and sys.version_info[1] < 8:
+
+    class A:
+        pass
+
+    TypedDict = A
+else:
+    from typing import TypedDict
 from gitgud_types import Json
 
 
