@@ -26,9 +26,9 @@ class MainFrame(wx.Frame):
         self.SetSizer(self.sizer)
 
         if connection_token:
-            from gui.main_screen import MainScreen
+            from gui.repo_screen import RepoScreen
 
-            self.push_screen(lambda: MainScreen(self, connection_token))
+            self.push_screen(lambda: RepoScreen(self, connection_token))
         else:
             from gui.register import RegisterPanel
 

@@ -2,7 +2,7 @@ from typing_extensions import override
 import wx
 from typing import cast
 from base_screen import BaseScreen
-from gui.main_screen import MainScreen
+from gui.repo_screen import RepoScreen
 from main import MainFrame
 from token_file import save_token_file
 import hash_password
@@ -67,7 +67,7 @@ class RegisterPanel(BaseScreen):
         def on_finished(result: Json):
             token = result["connectionToken"]
             save_token_file(token)
-            self.GetParent().change_screen(lambda: MainScreen(self.GetParent(), token))
+            self.GetParent().change_screen(lambda: RepoScreen(self.GetParent(), token))
 
         gui_run_request(self, pack_register(username, password, ssh_key), on_finished)
 

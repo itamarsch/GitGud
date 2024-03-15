@@ -2,7 +2,7 @@ from typing_extensions import override
 import wx
 import wx.adv
 from base_screen import BaseScreen
-from gui.main_screen import MainScreen
+from gui.repo_screen import RepoScreen
 from gui_run_request import gui_run_request
 import hash_password
 from main import MainFrame
@@ -59,6 +59,6 @@ class LoginPanel(BaseScreen):
         def on_finished(response: Json):
             token = response["connectionToken"]
             save_token_file(token)
-            self.GetParent().change_screen(lambda: MainScreen(self.GetParent(), token))
+            self.GetParent().change_screen(lambda: RepoScreen(self.GetParent(), token))
 
         gui_run_request(self, pack_login(username, password), on_finished)

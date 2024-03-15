@@ -5,7 +5,6 @@ from client_protocol import pack_create_repo
 from gitgud_types import Json
 
 from gui_run_request import gui_run_request
-from gui.repo_screen import RepoScreen
 from main import MainFrame
 
 
@@ -37,11 +36,7 @@ class RepoCreate(BaseScreen):
 
         def on_finished(result: Json):
             full_repo_name = result["fullRepoName"]
-            self.GetParent().push_screen(
-                lambda: RepoScreen(
-                    self.GetParent(), self.connection_token, full_repo_name
-                )
-            )
+            self.GetParent().pop_screen()
 
         gui_run_request(
             self,

@@ -9,7 +9,9 @@ from client_protocol import (
     pack_branches,
     pack_file_request,
     pack_project_directory,
+    pack_search_repo,
 )
+from gui.repo_create import RepoCreate
 from gui_run_request import gui_request_file, gui_run_request
 import pyperclip
 from gitgud_types import Json
@@ -19,11 +21,10 @@ branches_placeholder = "Select a branch"
 
 
 class RepoScreen(BaseScreen):
-    def __init__(self, parent: MainFrame, connection_token: str, repo: str = ""):
+    def __init__(self, parent: MainFrame, connection_token: str):
         self.connection_token = connection_token
         self.directory = ""
         self.branch = ""
-        self.repo = repo
         super().__init__(parent, 1, 1, title="Repo")
 
     @override
@@ -32,11 +33,11 @@ class RepoScreen(BaseScreen):
         repo_label = wx.StaticText(self, label="Repo")
         self.repo_text = wx.TextCtrl(self, style=wx.TE_PROCESS_ENTER)
 
-        if self.repo:
-            self.repo_text.WriteText(self.repo)
-            self.on_repo_enter(None)
-
+        self.repo_text.Bind(wx.EVT_TEXT, self.on_text_changed)
         self.repo_text.Bind(wx.EVT_TEXT_ENTER, self.on_repo_enter)
+
+        self.repo_list_box = wx.ListBox(self)
+        self.repo_list_box.Bind(wx.EVT_LISTBOX_DCLICK, self.on_search_result_selected)
 
         repo_options = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -54,12 +55,22 @@ class RepoScreen(BaseScreen):
         copy_git_url_button = wx.Button(self, label="Copy repo url")
         copy_git_url_button.Bind(wx.EVT_BUTTON, self.copy_repo_url)
 
+        repo_create_button = wx.Button(self, label="Create repo")
+        repo_create_button.Bind(
+            wx.EVT_BUTTON,
+            lambda _: self.GetParent().push_screen(
+                lambda: RepoCreate(self.GetParent(), self.connection_token)
+            ),
+        )
+
         repo_options_widget = [
+            self.repo_list_box,
             self.branches_list,
             commits_button,
             issues_button,
             pull_requests_button,
             copy_git_url_button,
+            repo_create_button,
         ]
         for i, widget in enumerate(repo_options_widget):
             repo_options.Add(widget, 1, wx.EXPAND)
@@ -80,7 +91,28 @@ class RepoScreen(BaseScreen):
         main_sizer.AddSpacer(5)
         main_sizer.Add(self.directory_list, 10, wx.CENTER | wx.EXPAND)
 
+    def on_text_changed(self, event):
+        query = event.GetEventObject().GetValue()
+        if query:
+
+            def on_finished(result: Json):
+                options = result["repos"]
+
+                self.repo_list_box.Clear()
+                self.repo_list_box.SetItems(options)
+
+            gui_run_request(self, pack_search_repo(query), on_finished)
+
+    def on_search_result_selected(self, _):
+        selection = self.repo_list_box.GetSelection()
+        if selection != wx.NOT_FOUND:
+            repo = self.repo_list_box.GetString(selection)
+            self.repo_text.Clear()
+            self.repo_text.WriteText(repo)
+            self.on_repo_enter(None)
+
     def on_repo_enter(self, _):
+
         def on_finished(response: Json):
             self.branches_list.Clear()
             self.branches_list.Append(branches_placeholder)
