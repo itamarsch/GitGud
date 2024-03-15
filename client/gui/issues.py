@@ -5,6 +5,7 @@ from typing import Callable, List, cast
 from base_screen import BaseScreen
 from gui.issue import IssueViewer
 from gitgud_types import Json
+from gui.issue_editor import IssueEditor
 from gui_run_request import gui_run_request
 
 from client_protocol import Issue, pack_delete_issue, pack_view_issues
@@ -20,11 +21,25 @@ class Issues(BaseScreen):
         super().__init__(parent, 1, 1, title="Issues")
 
     @override
-    def add_children(self, main_sizer):
+    def on_load(self):
+        print("On load")
+        self.request_issues()
 
+    @override
+    def add_children(self, main_sizer):
         self.issues_list = wx.ListBox(self, choices=[])
         self.issues_list.Bind(wx.EVT_RIGHT_DOWN, self.on_right_click)
         self.request_issues()
+        create_issue = wx.Button(self, label="Create issue")
+        create_issue.Bind(
+            wx.EVT_BUTTON,
+            lambda _: self.GetParent().push_screen(
+                lambda: IssueEditor(
+                    self.GetParent(), None, self.connection_token, self.repo
+                )
+            ),
+        )
+        main_sizer.Add(create_issue, 0, wx.RIGHT)
 
         main_sizer.Add(self.issues_list, 15, wx.CENTER | wx.EXPAND)
 
@@ -39,8 +54,10 @@ class Issues(BaseScreen):
         menu = wx.Menu()
         delete = menu.Append(wx.ID_ANY, "Delete")
         view = menu.Append(wx.ID_ANY, "View")
+        edit = menu.Append(wx.ID_ANY, "Edit")
         self.Bind(wx.EVT_MENU, self.on_deleted, delete)
         self.Bind(wx.EVT_MENU, self.on_issue_view, view)
+        self.Bind(wx.EVT_MENU, self.on_issue_edit, edit)
 
         self.PopupMenu(menu)
         menu.Destroy()
@@ -61,6 +78,16 @@ class Issues(BaseScreen):
         issue = cast(Issue, self.issues[issue_index])
 
         self.GetParent().push_screen(lambda: IssueViewer(self.GetParent(), issue))
+
+    def on_issue_edit(self, _):
+        issue_index = self.issues_list.GetSelection()
+        issue = cast(Issue, self.issues[issue_index])
+
+        self.GetParent().push_screen(
+            lambda: IssueEditor(
+                self.GetParent(), issue, self.connection_token, self.repo
+            )
+        )
 
     def request_issues(self):
         def on_finished(result: Json):

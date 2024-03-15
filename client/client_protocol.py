@@ -79,6 +79,28 @@ def pack_delete_issue(id: int, connection_token: str) -> Json:
     return {"type": "deleteIssue", "id": id, "connectionToken": connection_token}
 
 
+def pack_create_issue(
+    repo: str, connection_token: str, title: str, content: str
+) -> Json:
+    return {
+        "type": "createIssue",
+        "repo": repo,
+        "connectionToken": connection_token,
+        "title": title,
+        "content": content,
+    }
+
+
+def pack_update_issue(id: int, connection_token: str, title: str, content: str) -> Json:
+    return {
+        "type": "updateIssue",
+        "id": id,
+        "connectionToken": connection_token,
+        "title": title,
+        "content": content,
+    }
+
+
 class Issue(TypedDict):
     username: str
     title: str

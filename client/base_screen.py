@@ -51,6 +51,9 @@ class BaseScreen(wx.Panel):
 
         self.SetSizerAndFit(outer_sizer)
 
+    def on_load(self):
+        pass
+
     def GetParent(self) -> MainFrame:
         return cast(MainFrame, super().GetParent())
 

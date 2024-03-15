@@ -3,8 +3,14 @@ import os
 from token_file import read_token_file
 from client_comm import ClientComm
 from client_protocol import pack_validate_token
-from typing import Callable, Optional, cast, List
+from typing import Callable, Optional, TypeVar, cast, List
 from dotenv import load_dotenv
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from base_screen import BaseScreen
+else:
+    BaseScreen = TypeVar("BaseScreen")
 
 
 class MainFrame(wx.Frame):
@@ -13,7 +19,8 @@ class MainFrame(wx.Frame):
         super().__init__(None, title="GitGud")
 
         self.client_com = client_com
-        self.screens: List[wx.Panel] = []
+
+        self.screens: List[BaseScreen] = []
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -30,14 +37,15 @@ class MainFrame(wx.Frame):
 
         self.Show()
 
-    def push_screen(self, screen_fn: Callable[[], wx.Panel]):
+    def push_screen(self, screen_fn: Callable[[], BaseScreen]):
         if self.screens:
             self.screens[-1].Hide()
             self.sizer.Remove(0)
 
-        self.screens.append(cast(wx.Panel, None))
-        self.screens[-1] = screen_fn()
+        from base_screen import BaseScreen
 
+        self.screens.append(cast(BaseScreen, None))
+        self.screens[-1] = screen_fn()
         self.sizer.Add(self.screens[-1], 1, wx.EXPAND)
         self.SetSizer(self.sizer)
         self.Layout()
@@ -46,12 +54,13 @@ class MainFrame(wx.Frame):
         self.screens[-1].Hide()
         self.screens.pop()
         self.screens[-1].Show()
+        self.screens[-1].on_load()
         self.sizer.Remove(0)
         self.sizer.Add(self.screens[-1], 1, wx.EXPAND)
         self.SetSizer(self.sizer)
         self.Layout()
 
-    def change_screen(self, panel: Callable[[], wx.Panel]):
+    def change_screen(self, panel: Callable[[], BaseScreen]):
         self.screens[-1].Hide()
         self.screens[-1] = panel()
         self.screens[-1].Show()

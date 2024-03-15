@@ -2,10 +2,11 @@ from typing_extensions import override
 import wx
 
 from base_screen import BaseScreen
+from main import MainFrame
 
 
 class CommitDiff(BaseScreen):
-    def __init__(self, parent, diff: str):
+    def __init__(self, parent: MainFrame, diff: str):
 
         self.diff = diff
         super().__init__(parent, 0, 1)

@@ -9,7 +9,7 @@ import hash_password
 from gitgud_types import Json
 from client_protocol import pack_register
 
-from  import gui_run_request
+from gui_run_request import gui_run_request
 
 
 class RegisterPanel(BaseScreen):
