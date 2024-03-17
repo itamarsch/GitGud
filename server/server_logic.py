@@ -114,7 +114,7 @@ class ServerLogic:
             ),
             "createPullRequest": (
                 self.create_pull_request,
-                ["repo", "connectionToken", "fromBranch", "intoBranch"],
+                ["repo", "title", "connectionToken", "fromBranch", "intoBranch"],
             ),
             "viewPullRequests": (self.view_pull_requests, ["repo", "connectionToken"]),
             "deletePullRequest": (self.delete_pull_request, ["id", "connectionToken"]),
@@ -424,15 +424,15 @@ class ServerLogic:
         with RepoClone(request["repo"]) as repo:
             branches = branches_of_repo(repo)
             for i, pr in enumerate(pull_requests):
-                (id, _, _, from_branch, into_branch) = pr
+                (id, _, _, from_branch, into_branch, _) = pr
                 if from_branch not in branches or into_branch not in branches:
                     pull_requests.pop(i)
                     self.db.delete_pr(id)
 
         return pack_view_pull_requests(
             [
-                pack_pull_request(issue[1], issue[2], issue[3], issue[4], issue[0])
-                for issue in pull_requests
+                pack_pull_request(pr[1], pr[2], pr[3], pr[4], pr[0], pr[5])
+                for pr in pull_requests
             ]
         )
 
@@ -453,10 +453,14 @@ class ServerLogic:
         into_branch = request["intoBranch"]
         title = request["title"]
         error = self.validate_issue_or_pr(id, connectionToken, "PR")
+
         if error is not None:
             return error
 
-        with RepoClone(request["repo"]) as repo:
+        (owner, repo_name) = cast(Tuple[str, str], self.db.repo_and_owner_of_pr(id))
+        full_repo = f"{owner}/{repo_name}"
+
+        with RepoClone(full_repo) as repo:
             branches = branches_of_repo(repo)
             if from_branch not in branches or into_branch not in branches:
                 return pack_error("Invalid branches")

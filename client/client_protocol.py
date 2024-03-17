@@ -128,3 +128,50 @@ def pack_create_repo(repo_name: str, is_public: bool, connection_token: str):
         "visibility": is_public,
         "connectionToken": connection_token,
     }
+
+
+def pack_view_prs(repo: str, connection_token: str) -> Json:
+    return {
+        "type": "viewPullRequests",
+        "repo": repo,
+        "connectionToken": connection_token,
+    }
+
+
+def pack_update_pull_request(
+    id: int, connection_token: str, title: str, from_branch: str, into_branch: str
+):
+    return {
+        "type": "updatePullRequest",
+        "id": id,
+        "connectionToken": connection_token,
+        "title": title,
+        "fromBranch": from_branch,
+        "intoBranch": into_branch,
+    }
+
+
+def pack_create_pull_request(
+    repo: str, connection_token: str, title: str, from_branch: str, into_branch: str
+):
+    return {
+        "type": "createPullRequest",
+        "repo": repo,
+        "connectionToken": connection_token,
+        "title": title,
+        "fromBranch": from_branch,
+        "intoBranch": into_branch,
+    }
+
+
+def pack_delete_pr(id: int, connection_token: str) -> Json:
+    return {"type": "deletePullRequest", "id": id, "connectionToken": connection_token}
+
+
+class PullRequest(TypedDict):
+    username: str
+    title: str
+    fromBranch: str
+    intoBranch: str
+    approved: bool
+    id: int

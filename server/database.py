@@ -139,20 +139,20 @@ where repo_id = %s""",
         )
         self.conn.commit()
 
-    def pull_requests(self, repo_id: int) -> List[Tuple[int, str, str, str, str]]:
+    def pull_requests(self, repo_id: int) -> List[Tuple[int, str, str, str, str, bool]]:
         """
-        Returns all pull request for repository in the format: id, username, title, from_branch, into_branch
+        Returns all pull request for repository in the format: id, username, title, from_branch, into_branch, approved
         """
         self.cursor.execute(
             """
-SELECT "PullRequest".id, "User".username, "PullRequest".title, "PullRequest".from_branch, "PullRequest".into_branch 
+SELECT "PullRequest".id, "User".username, "PullRequest".title, "PullRequest".from_branch, "PullRequest".into_branch, "PullRequest".approved
 from "PullRequest" 
 INNER JOIN "User" on "User".id="PullRequest".user_id
 where repo_id = %s
 """,
             (repo_id,),
         )
-        return cast(List[Tuple[int, str, str, str, str]], self.cursor.fetchall())
+        return cast(List[Tuple[int, str, str, str, str, bool]], self.cursor.fetchall())
 
     def change_repo_visibility(self, repo_id: int, public: bool):
         self.cursor.execute(

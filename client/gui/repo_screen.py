@@ -11,6 +11,7 @@ from client_protocol import (
     pack_project_directory,
     pack_search_repo,
 )
+from gui.pull_requests import PullRequests
 from gui.repo_create import RepoCreate
 from gui_run_request import gui_request_file, gui_run_request
 import pyperclip
@@ -25,6 +26,7 @@ class RepoScreen(BaseScreen):
         self.connection_token = connection_token
         self.directory = ""
         self.branch = ""
+        self.repo = ""
         super().__init__(parent, 1, 1, title="Repo")
 
     @override
@@ -36,8 +38,10 @@ class RepoScreen(BaseScreen):
         self.repo_text.Bind(wx.EVT_TEXT, self.on_text_changed)
         self.repo_text.Bind(wx.EVT_TEXT_ENTER, self.on_repo_enter)
 
-        self.repo_list_box = wx.ListBox(self)
-        self.repo_list_box.Bind(wx.EVT_LISTBOX_DCLICK, self.on_search_result_selected)
+        self.repo_suggestions = wx.ListBox(self)
+        self.repo_suggestions.Bind(
+            wx.EVT_LISTBOX_DCLICK, self.on_search_result_selected
+        )
 
         repo_options = wx.BoxSizer(wx.HORIZONTAL)
 
@@ -51,6 +55,7 @@ class RepoScreen(BaseScreen):
         issues_button.Bind(wx.EVT_BUTTON, self.on_issues_screen_button)
 
         pull_requests_button = wx.Button(self, label="Pull requests")
+        pull_requests_button.Bind(wx.EVT_BUTTON, self.on_pr_screen_button)
 
         copy_git_url_button = wx.Button(self, label="Copy repo url")
         copy_git_url_button.Bind(wx.EVT_BUTTON, self.copy_repo_url)
@@ -64,7 +69,7 @@ class RepoScreen(BaseScreen):
         )
 
         repo_options_widget = [
-            self.repo_list_box,
+            self.repo_suggestions,
             self.branches_list,
             commits_button,
             issues_button,
@@ -98,15 +103,15 @@ class RepoScreen(BaseScreen):
             def on_finished(result: Json):
                 options = result["repos"]
 
-                self.repo_list_box.Clear()
-                self.repo_list_box.SetItems(options)
+                self.repo_suggestions.Clear()
+                self.repo_suggestions.SetItems(options)
 
             gui_run_request(self, pack_search_repo(query), on_finished)
 
     def on_search_result_selected(self, _):
-        selection = self.repo_list_box.GetSelection()
+        selection = self.repo_suggestions.GetSelection()
         if selection != wx.NOT_FOUND:
-            repo = self.repo_list_box.GetString(selection)
+            repo = self.repo_suggestions.GetString(selection)
             self.repo_text.Clear()
             self.repo_text.WriteText(repo)
             self.on_repo_enter(None)
@@ -118,6 +123,8 @@ class RepoScreen(BaseScreen):
             self.branches_list.Append(branches_placeholder)
             self.branches_list.Append(response["branches"])
             self.branches_list.SetSelection(0)
+            self.branch = ""
+            self.directory_list.Clear()
 
         self.repo = self.repo_text.GetValue()
 
@@ -155,6 +162,15 @@ class RepoScreen(BaseScreen):
 
         self.GetParent().push_screen(
             lambda: Issues(self.GetParent(), self.repo, self.connection_token)
+        )
+
+    def on_pr_screen_button(self, _):
+        if not self.repo:
+            wx.MessageBox("Please fill in fields")
+            return
+
+        self.GetParent().push_screen(
+            lambda: PullRequests(self.GetParent(), self.repo, self.connection_token)
         )
 
     def copy_repo_url(self, _):

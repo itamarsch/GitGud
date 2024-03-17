@@ -50,6 +50,7 @@ class BaseScreen(wx.Panel):
         outer_sizer.AddStretchSpacer(1)
 
         self.SetSizerAndFit(outer_sizer)
+        self.Layout()
 
     def on_load(self):
         pass

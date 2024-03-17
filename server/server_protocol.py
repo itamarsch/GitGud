@@ -83,13 +83,19 @@ def pack_create_pull_request() -> Json:
 
 
 def pack_pull_request(
-    username: str, title: str, from_branch: str, into_branch: str, id: int
+    username: str,
+    title: str,
+    from_branch: str,
+    into_branch: str,
+    id: int,
+    approved: bool,
 ):
     return {
         "username": username,
         "title": title,
         "fromBranch": from_branch,
         "intoBranch": into_branch,
+        "approved": approved,
         "id": id,
     }
 
