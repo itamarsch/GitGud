@@ -1,7 +1,17 @@
-from git import Diff, DiffIndex
+from git import Commit, Diff, DiffIndex, Repo
 from git.objects.base import IndexObject
 
 from typing import List, cast
+
+
+def triple_dot_diff(repo: Repo, into_branch: str, from_branch: str):
+    base_commit = cast(List[Commit], repo.merge_base(into_branch, from_branch))
+
+    if not base_commit:
+        return None
+
+    diff = base_commit[0].diff(from_branch)
+    return diff
 
 
 def make_diff_str(add: bool, diff: str) -> str:

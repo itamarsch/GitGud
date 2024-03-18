@@ -168,6 +168,10 @@ def pack_delete_pr(id: int, connection_token: str) -> Json:
     return {"type": "deletePullRequest", "id": id, "connectionToken": connection_token}
 
 
+def pack_pull_request_diff(id: int, connection_token: str) -> Json:
+    return {"type": "prDiff", "connectionToken": connection_token, "id": id}
+
+
 class PullRequest(TypedDict):
     username: str
     title: str

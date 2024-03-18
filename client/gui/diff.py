@@ -5,7 +5,7 @@ from base_screen import BaseScreen
 from main import MainFrame
 
 
-class CommitDiff(BaseScreen):
+class Diff(BaseScreen):
     def __init__(self, parent: MainFrame, diff: str):
 
         self.diff = diff

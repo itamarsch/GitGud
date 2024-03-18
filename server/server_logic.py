@@ -5,7 +5,7 @@ from gitdb.util import os
 from database import DB
 from git_manager import GitManager
 from queue import Queue
-from diff import get_diff_string
+from diff import get_diff_string, triple_dot_diff
 from repo_clone import RepoClone
 from server_protocol import (
     pack_branches,
@@ -122,7 +122,7 @@ class ServerLogic:
                 self.update_pull_request,
                 ["id", "connectionToken", "title", "fromBranch", "intoBranch"],
             ),
-            "prDiff": (self.pr_diff, ["connectionToken", "prId"]),
+            "prDiff": (self.pr_diff, ["connectionToken", "id"]),
             "validateConnection": (self.validate_connection, ["tokenForValidation"]),
             "searchRepo": (self.search_repo, ["searchQuery"]),
         }
@@ -468,24 +468,34 @@ class ServerLogic:
         return pack_update_pr()
 
     def pr_diff(self, request: Json) -> Json:
-        full_repo_name = cast(str, request["repo"])
         error = self.validate_issue_or_pr(
-            request["prId"], request["connectionToken"], "PR"
+            request["id"], request["connectionToken"], "PR"
         )
         if error is not None:
             return error
 
-        branches = cast(
-            Tuple[str, str], self.db.pr_branches(request["prId"])
+        (owner, repo_name) = cast(
+            Tuple[str, str], self.db.repo_and_owner_of_pr(request["id"])
+        )
+
+        (into_branch, from_branch) = cast(
+            Tuple[str, str], self.db.pr_branches(request["id"])
         )  # Saftey: id validation in validate_issue_or_pr
 
-        if branches[0].startswith("origin/") or branches[1].startswith("origin/"):
+        if into_branch.startswith("origin/") or from_branch.startswith("origin/"):
             return pack_error("Use only branch name no need for remote")
 
-        with RepoClone(full_repo_name) as r:
+        with RepoClone(f"{owner}/{repo_name}") as r:
+            repo_branches = branches_of_repo(r)
+            if into_branch not in repo_branches or from_branch not in repo_branches:
+                self.db.delete_pr(request["id"])
+                return pack_error("Invalid pr branches, deleting")
 
-            diff = r.git.diff(f"origin/{branches[0]}...origin/{branches[1]}")
-            print(diff)
+            into_branch = f"origin/{into_branch}"
+            from_branch = f"origin/{from_branch}"
+            diff = triple_dot_diff(r, into_branch, from_branch)
+            if not diff:
+                return pack_error("No common base")
 
             token = token_urlsafe(32)
             full_diff = get_diff_string(diff)

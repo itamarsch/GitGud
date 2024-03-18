@@ -3,7 +3,7 @@ import wx
 import wx.html2
 from typing import Callable, List, cast
 from base_screen import BaseScreen
-from gui.commit_diff import CommitDiff
+from gui.diff import Diff
 from gitgud_types import Json
 from gui_run_request import gui_request_file, gui_run_request
 
@@ -64,9 +64,7 @@ class Commits(BaseScreen):
         commit = cast(Commit, self.commits[index])
 
         def on_finished(diff: bytes):
-            self.GetParent().push_screen(
-                lambda: CommitDiff(self.GetParent(), diff.decode())
-            )
+            self.GetParent().push_screen(lambda: Diff(self.GetParent(), diff.decode()))
 
         gui_request_file(
             self,

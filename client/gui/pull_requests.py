@@ -4,13 +4,15 @@ import wx.html2
 from typing import Callable, List, cast
 from base_screen import BaseScreen
 from gitgud_types import Json
+from gui.diff import Diff
 from gui.pr_editor import PullRequestEditor
-from gui_run_request import gui_run_request
+from gui_run_request import gui_request_file, gui_run_request
 
 from client_protocol import (
     PullRequest,
     pack_delete_pr,
     pack_view_prs,
+    pack_pull_request_diff,
 )
 from main import MainFrame
 
@@ -58,7 +60,7 @@ class PullRequests(BaseScreen):
         view = menu.Append(wx.ID_ANY, "View")
         edit = menu.Append(wx.ID_ANY, "Edit")
         self.Bind(wx.EVT_MENU, self.on_deleted, delete)
-        self.Bind(wx.EVT_MENU, self.on_issue_view, view)
+        self.Bind(wx.EVT_MENU, self.on_pr_view, view)
         self.Bind(wx.EVT_MENU, self.on_pr_edit, edit)
 
         self.PopupMenu(menu)
@@ -73,11 +75,16 @@ class PullRequests(BaseScreen):
 
         gui_run_request(self, pack_delete_pr(pr_id, self.connection_token), on_finished)
 
-    def on_issue_view(self, _):
+    def on_pr_view(self, _):
         pr_index: int = self.pr_list.GetSelection()
         pr = self.prs[pr_index]
 
-        # self.GetParent().push_screen(lambda: IssueViewer(self.GetParent(), pr))
+        def on_finished(diff: bytes):
+            self.GetParent().push_screen(lambda: Diff(self.GetParent(), diff.decode()))
+
+        gui_request_file(
+            self, pack_pull_request_diff(pr["id"], self.connection_token), on_finished
+        )
 
     def on_pr_edit(self, _):
         pr_index: int = self.pr_list.GetSelection()
