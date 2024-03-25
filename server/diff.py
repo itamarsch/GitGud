@@ -16,12 +16,13 @@ def commits_between_branches(
     merge_base_commit = merge_base[0]
 
     commits = []
-    for commit in repo.iter_commits(
-        from_branch, skip=page * commit_page_size, max_count=commit_page_size
+    for i, commit in enumerate(
+        repo.iter_commits(from_branch, max_count=commit_page_size)
     ):
-        print(commit.message)
         if commit.hexsha == merge_base_commit.hexsha:
             break
+        if i < page * commit_page_size:
+            continue
         commits.append(commit)
 
     return commits
