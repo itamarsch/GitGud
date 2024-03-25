@@ -1,7 +1,30 @@
 from git import Commit, Diff, DiffIndex, Repo
 from git.objects.base import IndexObject
 
+
 from typing import List, cast
+from gitgud_types import commit_page_size
+
+
+def commits_between_branches(
+    repo: Repo, from_branch: str, into_branch: str, page: int
+) -> List[Commit]:
+
+    merge_base = cast(List[Commit], repo.merge_base(into_branch, from_branch))
+    if not merge_base:
+        return []
+    merge_base_commit = merge_base[0]
+
+    commits = []
+    for commit in repo.iter_commits(
+        from_branch, skip=page * commit_page_size, max_count=commit_page_size
+    ):
+        print(commit.message)
+        if commit.hexsha == merge_base_commit.hexsha:
+            break
+        commits.append(commit)
+
+    return commits
 
 
 def triple_dot_diff(repo: Repo, into_branch: str, from_branch: str):

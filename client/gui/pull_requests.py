@@ -4,6 +4,7 @@ import wx.html2
 from typing import Callable, List, cast
 from base_screen import BaseScreen
 from gitgud_types import Json
+from gui.commits import Commits
 from gui.diff import Diff
 from gui.pr_editor import PullRequestEditor
 from gui_run_request import gui_request_file, gui_run_request
@@ -11,6 +12,7 @@ from gui_run_request import gui_request_file, gui_run_request
 from client_protocol import (
     PullRequest,
     pack_delete_pr,
+    pack_pr_commits,
     pack_view_prs,
     pack_pull_request_diff,
 )
@@ -57,14 +59,28 @@ class PullRequests(BaseScreen):
     def create_popup_menu(self, _):
         menu = wx.Menu()
         delete = menu.Append(wx.ID_ANY, "Delete")
-        view = menu.Append(wx.ID_ANY, "View")
+        diff = menu.Append(wx.ID_ANY, "Diff")
+        commits = menu.Append(wx.ID_ANY, "Commits")
         edit = menu.Append(wx.ID_ANY, "Edit")
         self.Bind(wx.EVT_MENU, self.on_deleted, delete)
-        self.Bind(wx.EVT_MENU, self.on_pr_view, view)
+        self.Bind(wx.EVT_MENU, self.on_pr_diff, diff)
         self.Bind(wx.EVT_MENU, self.on_pr_edit, edit)
+        self.Bind(wx.EVT_MENU, self.on_commits, commits)
 
         self.PopupMenu(menu)
         menu.Destroy()
+
+    def on_commits(self, _):
+        pr_index: int = self.pr_list.GetSelection()
+        pr_id = self.prs[pr_index]["id"]
+        self.GetParent().push_screen(
+            lambda: Commits(
+                self.GetParent(),
+                self.connection_token,
+                lambda page: pack_pr_commits(pr_id, page, self.connection_token),
+                self.repo,
+            )
+        )
 
     def on_deleted(self, _):
         pr_index: int = self.pr_list.GetSelection()
@@ -75,7 +91,7 @@ class PullRequests(BaseScreen):
 
         gui_run_request(self, pack_delete_pr(pr_id, self.connection_token), on_finished)
 
-    def on_pr_view(self, _):
+    def on_pr_diff(self, _):
         pr_index: int = self.pr_list.GetSelection()
         pr = self.prs[pr_index]
 

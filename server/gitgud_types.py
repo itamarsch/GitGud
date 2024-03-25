@@ -5,3 +5,6 @@ Address = Tuple[str, int]
 Action = Callable[[Json], Json]
 
 IssuePr = Literal["Issue", "PR"]
+
+
+commit_page_size = 20

@@ -7,9 +7,7 @@ from gui_run_request import gui_run_request
 from client_protocol import (
     PullRequest,
     pack_branches,
-    pack_create_issue,
     pack_create_pull_request,
-    pack_update_issue,
     pack_update_pull_request,
 )
 

@@ -5,7 +5,7 @@ from gitdb.util import os
 from database import DB
 from git_manager import GitManager
 from queue import Queue
-from diff import get_diff_string, triple_dot_diff
+from diff import commits_between_branches, get_diff_string, triple_dot_diff
 from repo_clone import RepoClone
 from server_protocol import (
     pack_branches,
@@ -32,13 +32,13 @@ from server_protocol import (
     pack_view_pull_requests,
     unpack,
 )
-from git import GitCommandError, Repo
+from git import GitCommandError, Repo, Commit as GitCommit
 from server_comm import FileComm, ServerComm
-from gitgud_types import Action, IssuePr, Json, Address
+from gitgud_types import Action, IssuePr, Json, Address, commit_page_size
 from secrets import token_urlsafe
 from fuzzywuzzy import process
 
-commit_page_size = 20
+from ssh_validation import validate_pubkey
 
 
 class ServerLogic:
@@ -123,6 +123,7 @@ class ServerLogic:
                 ["id", "connectionToken", "title", "fromBranch", "intoBranch"],
             ),
             "prDiff": (self.pr_diff, ["connectionToken", "id"]),
+            "prCommits": (self.pr_commits, ["connectionToken", "id", "page"]),
             "validateConnection": (self.validate_connection, ["tokenForValidation"]),
             "searchRepo": (self.search_repo, ["searchQuery"]),
         }
@@ -156,6 +157,11 @@ class ServerLogic:
         ssh_key = request["sshKey"]
         if self.db.user_exists(username):
             return pack_error("User exists")
+        if not validate_pubkey(ssh_key):
+            return pack_error("Invalid ssh key")
+
+        if not username:
+            return pack_error("Invalid username")
 
         self.db.add_user(username, password_hash)
         self.git_manager.add_ssh_key(username, ssh_key)
@@ -265,6 +271,19 @@ class ServerLogic:
             except FileNotFoundError:
                 return pack_error("File doesn't exist")
 
+    @staticmethod
+    def pack_git_commits(commits: List[GitCommit]) -> List[Json]:
+        res = []
+        for c in commits:
+            date = datetime.datetime.fromtimestamp(c.authored_date).strftime(
+                "%Y-%m-%d %H:%M:%S"
+            )
+            authour = str(c.author)
+            hash = c.hexsha
+            message = cast(str, c.message)
+            res.append(pack_commit(date, hash, message, authour))
+        return res
+
     def commits(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
@@ -281,17 +300,43 @@ class ServerLogic:
                     branch, skip=page * commit_page_size, max_count=commit_page_size
                 )
             )
-            commits_list = []
-            for c in fifty_first_commits:
-                date = datetime.datetime.fromtimestamp(c.authored_date).strftime(
-                    "%Y-%m-%d %H:%M:%S"
-                )
-                authour = str(c.author)
-                hash = c.hexsha
-                message = cast(str, c.message)
-                commits_list.append(pack_commit(date, hash, message, authour))
 
-            return pack_commits(commits_list)
+            return pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
+
+    def pr_commits(self, request: Json) -> Json:
+        error = self.validate_issue_or_pr(
+            request["id"], request["connectionToken"], "PR"
+        )
+
+        if error is not None:
+            return error
+
+        (owner, repo_name) = cast(
+            Tuple[str, str], self.db.repo_and_owner_of_pr(request["id"])
+        )
+        # Saftey: Id validation in validate_issue_or_pr
+        (into_branch, from_branch) = cast(
+            Tuple[str, str], self.db.pr_branches(request["id"])
+        )
+
+        full_repo_name = f"{owner}/{repo_name}"
+        page = int(request["page"])
+
+        # Safe to clone, repo exists in database
+        with RepoClone(full_repo_name) as r:
+            error = self.validate_pr_branches(
+                r, request["id"], into_branch, from_branch
+            )
+            if error is not None:
+                return error
+
+            fifty_first_commits = list(
+                commits_between_branches(
+                    r, f"origin/{from_branch}", f"origin/{into_branch}", page
+                )
+            )
+
+            return pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
 
     def diff(self, request: Json) -> Json:
         full_repo_name = cast(str, request["repo"])
@@ -461,11 +506,23 @@ class ServerLogic:
         full_repo = f"{owner}/{repo_name}"
 
         with RepoClone(full_repo) as repo:
-            branches = branches_of_repo(repo)
-            if from_branch not in branches or into_branch not in branches:
-                return pack_error("Invalid branches")
+            error = self.validate_pr_branches(
+                repo, request["id"], into_branch, from_branch
+            )
+            if error is not None:
+                return error
         self.db.update_pr(id, title, from_branch, into_branch)
         return pack_update_pr()
+
+    def validate_pr_branches(
+        self, repo: Repo, id: int, into_branch: str, from_branch: str
+    ) -> Optional[Json]:
+
+        repo_branches = branches_of_repo(repo)
+        if into_branch not in repo_branches or from_branch not in repo_branches:
+            self.db.delete_pr(id)
+            return pack_error("Invalid pr branches, deleting")
+        return None
 
     def pr_diff(self, request: Json) -> Json:
         error = self.validate_issue_or_pr(
@@ -486,10 +543,12 @@ class ServerLogic:
             return pack_error("Use only branch name no need for remote")
 
         with RepoClone(f"{owner}/{repo_name}") as r:
-            repo_branches = branches_of_repo(r)
-            if into_branch not in repo_branches or from_branch not in repo_branches:
-                self.db.delete_pr(request["id"])
-                return pack_error("Invalid pr branches, deleting")
+            error = self.validate_pr_branches(
+                r, request["id"], into_branch, from_branch
+            )
+
+            if error is not None:
+                return error
 
             into_branch = f"origin/{into_branch}"
             from_branch = f"origin/{from_branch}"

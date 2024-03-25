@@ -172,6 +172,15 @@ def pack_pull_request_diff(id: int, connection_token: str) -> Json:
     return {"type": "prDiff", "connectionToken": connection_token, "id": id}
 
 
+def pack_pr_commits(id: int, page: int, connection_token: str) -> Json:
+    return {
+        "type": "prCommits",
+        "id": id,
+        "page": page,
+        "connectionToken": connection_token,
+    }
+
+
 class PullRequest(TypedDict):
     username: str
     title: str

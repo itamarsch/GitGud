@@ -7,18 +7,21 @@ from gui.diff import Diff
 from gitgud_types import Json
 from gui_run_request import gui_request_file, gui_run_request
 
-from client_protocol import Commit, pack_commits, pack_diff
+from client_protocol import Commit, pack_diff
 from main import MainFrame
 
 
 class Commits(BaseScreen):
     def __init__(
-        self, parent: MainFrame, repo: str, connection_token: str, branch: str
+        self,
+        parent: MainFrame,
+        connection_token: str,
+        pack_commit_request: Callable[[int], Json],
+        repo: str,
     ):
-
         self.repo = repo
         self.connection_token = connection_token
-        self.branch = branch
+        self.pack_request = pack_commit_request
         self.page = 0
         self.commits: List[Commit] = []
         super().__init__(parent, 1, 1, title="Commits")
@@ -81,7 +84,7 @@ class Commits(BaseScreen):
 
         gui_run_request(
             self,
-            pack_commits(self.repo, self.connection_token, self.branch, self.page),
+            self.pack_request(self.page),
             on_finished,
         )
 

@@ -7,6 +7,7 @@ from gui.file_screen import FileContent
 from gui.issues import Issues
 from client_protocol import (
     pack_branches,
+    pack_commits,
     pack_file_request,
     pack_project_directory,
     pack_search_repo,
@@ -151,7 +152,12 @@ class RepoScreen(BaseScreen):
 
         self.GetParent().push_screen(
             lambda: Commits(
-                self.GetParent(), self.repo, self.connection_token, self.branch
+                self.GetParent(),
+                self.connection_token,
+                lambda page: pack_commits(
+                    self.repo, self.connection_token, self.branch, page
+                ),
+                self.repo,
             )
         )
 
