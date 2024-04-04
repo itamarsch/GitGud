@@ -196,7 +196,7 @@ where "Repository".public
             self.cursor.fetchall(),
         )
 
-    def repo_and_owner_of_issue(self, issue_id: int) -> Optional[Tuple[str, str]]:
+    def repo_and_repo_owner_of_issue(self, issue_id: int) -> Optional[Tuple[str, str]]:
         """
         Returns the the owner and reponame of issue
         """
@@ -215,7 +215,7 @@ WHERE "Issue".id = %s
 
         return cast(Optional[Tuple[str, str]], user_repo)
 
-    def repo_and_owner_of_pr(self, pr_id: int) -> Optional[Tuple[str, str]]:
+    def repo_and_repo_owner_of_pr(self, pr_id: int) -> Optional[Tuple[str, str]]:
         """
         Returns the the owner and reponame of pr
         """

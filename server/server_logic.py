@@ -312,7 +312,7 @@ class ServerLogic:
             return error
 
         (owner, repo_name) = cast(
-            Tuple[str, str], self.db.repo_and_owner_of_pr(request["id"])
+            Tuple[str, str], self.db.repo_and_repo_owner_of_pr(request["id"])
         )
         # Saftey: Id validation in validate_issue_or_pr
         (into_branch, from_branch) = cast(
@@ -392,10 +392,12 @@ class ServerLogic:
     def validate_issue_or_pr(
         self, id: int, connection_token: str, issue: IssuePr
     ) -> Optional[Json]:
-        if issue == "Issue":
-            repo = self.db.repo_and_owner_of_issue(id)
-        else:
-            repo = self.db.repo_and_owner_of_pr(id)
+        match issue:
+            case "Issue":
+                repo = self.db.repo_and_repo_owner_of_issue(id)
+            case "PR":
+                repo = self.db.repo_and_repo_owner_of_pr(id)
+
         if repo is None:
             return pack_error("Invalid id")
         error_or_repo = self.validate_repo_request(
@@ -502,7 +504,9 @@ class ServerLogic:
         if error is not None:
             return error
 
-        (owner, repo_name) = cast(Tuple[str, str], self.db.repo_and_owner_of_pr(id))
+        (owner, repo_name) = cast(
+            Tuple[str, str], self.db.repo_and_repo_owner_of_pr(id)
+        )
         full_repo = f"{owner}/{repo_name}"
 
         with RepoClone(full_repo) as repo:
@@ -532,7 +536,7 @@ class ServerLogic:
             return error
 
         (owner, repo_name) = cast(
-            Tuple[str, str], self.db.repo_and_owner_of_pr(request["id"])
+            Tuple[str, str], self.db.repo_and_repo_owner_of_pr(request["id"])
         )
 
         (into_branch, from_branch) = cast(
