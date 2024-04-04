@@ -27,11 +27,31 @@ def compress_bytes(data: bytes) -> bytes:
 
 
 def recv(soc: socket.socket, length_size: int) -> bytes:
+    """
+    A function that receives data from a socket based on the length provided and returns the received data.
+    
+    Parameters:
+    - soc: A socket.socket object representing the socket to receive data from.
+    - length_size: An integer indicating the length of the data to receive.
+    
+    Returns:
+    - bytes: The data received from the socket.
+    """
     length_of_data = int(soc.recv(length_size).decode())
     return soc.recv(length_of_data)
 
 
 def send(soc: socket.socket, data: bytes, length_size: int):
+    """
+    A function that sends data over a socket after adding the length of the data at the beginning.
+
+    Parameters:
+    - soc: A socket.socket object representing the socket to send data over.
+    - data: A bytes object containing the data to be sent.
+    - length_size: An integer indicating the size of the length prefix to add to the data.
+
+    No return value.
+    """
     length_bytes = str(len(data)).zfill(length_size).encode()
     soc.send(length_bytes + data)
 
@@ -53,6 +73,14 @@ class FileComm:
         return self.soc.getsockname()[1]
 
     def _listen(self):
+        """
+        Listen for incoming connections, 
+        establish encryption, 
+        receive file request, 
+        validate file request, 
+        send file, 
+        then close the connection.
+        """
         self.soc = socket.socket()
         self.soc.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.soc.bind(("0.0.0.0", 0))
@@ -94,6 +122,12 @@ class ServerComm:
         return None
 
     def _listen(self, port: int):
+        """
+        Listens on a specified port for incoming connections and reads data from the sockets.
+        
+        Parameters:
+            port (int): The port number to listen on.
+        """
         self.server_socket.bind(("0.0.0.0", port))
         self.server_socket.listen(4)
         while self.running:
@@ -111,6 +145,15 @@ class ServerComm:
             soc[0].close()
 
     def _read_sockets(self, rlist: List[socket.socket]):
+        """
+        Read sockets and handle new client connections or received messages.
+        
+        Parameters:
+            rlist (List[socket.socket]): List of socket objects to read from.
+        
+        Returns:
+            None
+        """
         for soc in rlist:
             if soc is self.server_socket:
                 try:
@@ -129,13 +172,33 @@ class ServerComm:
                 else:
                     self._on_receive_encryption(soc, addr)
 
-    def send_and_close(self, adr: Address, data: str):
-        (soc, encyption) = self.open_sockets[adr]
+    def send_and_close(self, addr: Address, data: str):
+        """
+        Send data and close the socket for the given address.
+
+        Parameters:
+            addr (Address): The address to send the data to.
+            data (str): The data to be sent.
+
+        Returns:
+            None
+        """
+        (soc, encyption) = self.open_sockets[addr]
         data_to_send = encyption.encrypt(compress_str(data))
         send(soc, data_to_send, regular_length_size)
-        self._disconnect_client(adr)
+        self._disconnect_client(addr)
 
     def _on_message_receive(self, soc: socket.socket, addr: Address):
+        """
+        Handle receiving and processing messages from a socket connection.
+
+        Args:
+            soc (socket.socket): The socket object for the connection.
+            addr (Address): The address of the client.
+
+        Returns:
+            None
+        """
         try:
             data_bytes = recv(soc, regular_length_size)
             data_decrypted = self.open_sockets[addr][1].decrypt(data_bytes)
@@ -147,6 +210,13 @@ class ServerComm:
         self.logic_queue.put((data_decompressed, addr))
 
     def _on_receive_encryption(self, soc: socket.socket, addr: Address):
+        """
+        A function to handle receiving encryption responses from a socket.
+        
+        Parameters:
+            soc (socket.socket): The socket object for communication.
+            addr (Address): The address of the connection.
+        """
         try:
             encryption_response_bytes = recv(soc, encryption_length_size)
             self.open_sockets[addr][1].set_encryption_key(encryption_response_bytes)
@@ -156,6 +226,16 @@ class ServerComm:
             return
 
     def _new_client(self, soc: socket.socket, addr: Address):
+        """
+        Initializes a new client connection with the given socket and address.
+
+        Parameters:
+            soc (socket.socket): The socket object for the client connection.
+            addr (Address): The address of the client.
+
+        Returns:
+            None
+        """
         encryption = EncryptionState()
         self.open_sockets[addr] = (soc, encryption)
 
