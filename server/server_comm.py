@@ -192,7 +192,7 @@ class ServerComm:
         """
         Handle receiving and processing messages from a socket connection.
 
-        Args:
+        Parameters:
             soc (socket.socket): The socket object for the connection.
             addr (Address): The address of the client.
 

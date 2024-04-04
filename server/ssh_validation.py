@@ -4,6 +4,15 @@ import struct
 
 
 def validate_pubkey(pub_key: str) -> bool:
+    """
+    Validate a public ssh key string.
+    
+    Paramaters:
+        pub_key (str): The public ssh key to be validated.
+    
+    Returns:
+        bool: True if the public key is valid, False otherwise.
+    """
 
     split = pub_key.split(" ")
     if len(split) < 2:

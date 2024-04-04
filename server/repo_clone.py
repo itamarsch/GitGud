@@ -3,7 +3,19 @@ from git import Repo
 
 
 class RepoClone:
+    """
+    Class for entering a context where repo is cloned and deleteing it when leaving the context.
+    """
     def __init__(self, repo_name: str):
+        """
+        Initialize the class with the given repo_name.
+
+        Parameters:
+            repo_name (str): The name of the repository.
+
+        Returns:
+            None
+        """
         self.repo_name = repo_name
         self.path_of_clone: str
 

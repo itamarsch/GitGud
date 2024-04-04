@@ -479,7 +479,7 @@ class ServerLogic:
         """
         Create an issue for a given repository.
 
-        Args:
+        Parameters:
             request (Json): The JSON request containing information about the repository and the issue.
         
         Returns:
