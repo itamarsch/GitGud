@@ -54,6 +54,9 @@ class ServerLogic:
         self.actions = self.get_actions()
 
     def tick(self):
+        """
+        Process a request from the queue, apply an action, and send the response back to the client.
+        """
         (request, addr) = self.queue.get()
         response: Json
         try:
@@ -67,6 +70,14 @@ class ServerLogic:
         self.server_comm.send_and_close(addr, json.dumps(response))
 
     def apply_action(self, json: Json) -> Json:
+        """
+        A function to apply a given action to a JSON input assuming the keys are validated and return the result as JSON. 
+        Parameters:
+            self: the instance of the class
+            json: the JSON input
+        Returns:
+            JSON: the result of applying the action to the JSON input
+        """
         # Saftey: unpack requires type
         request_type = json["type"]
         if request_type not in self.actions:
@@ -129,6 +140,15 @@ class ServerLogic:
         }
 
     def generate_new_connection_token(self, username: str) -> str:
+        """
+        Generate a new connection token for a given username.
+
+        Parameters:
+            username (str): The username for which the token is generated.
+
+        Returns:
+            str: The newly generated connection token.
+        """
         token = token_urlsafe(32)
         self.connected_client[token] = username
         return token
@@ -136,6 +156,14 @@ class ServerLogic:
     def validate_repo_request(
         self, repo: str, connectionToken: str
     ) -> Union[Json, Tuple[int, str, bool]]:
+        """
+        Validate the repository request by checking if the user and repo are valid. 
+        Parameters:
+            repo (str): A string representing the user and repo separated by a forward slash.
+            connectionToken (str): A string representing the connection token for the request.
+        Returns:
+            Union[Json, Tuple[int, str, bool]]: Either repository data if valid, or an error message with status code and boolean.
+        """
         user_and_repo = repo.split("/")
         if len(user_and_repo) != 2:
             return pack_error("Invalid user and repo request")
@@ -152,6 +180,15 @@ class ServerLogic:
         return sql_repo_data
 
     def register(self, request: Json) -> Json:
+        """
+        A function to register a user with a unique username, password, and SSH key.
+        
+        Parameters:
+            request (Json): A JSON object containing the user's information including username, password, and SSH key.
+        
+        Returns:
+            Json: A JSON object containing a token after successful registration.
+        """
         username = request["username"]
         password_hash = request["password"]
         ssh_key = request["sshKey"]
@@ -171,6 +208,13 @@ class ServerLogic:
         return pack_register(token)
 
     def login(self, request: Json) -> Json:
+        """
+        A function that handles user login. Takes a JSON request with username and password, validates the user, generates a new connection token, and returns the login response in a JSON format.
+        Parameters:
+            request (Json): A JSON object containing the username and password.
+        Returns:
+            Json: A JSON object containing the login token.
+        """
         username = request["username"]
         password_hash = request["password"]
 
@@ -182,6 +226,15 @@ class ServerLogic:
         return pack_login(token)
 
     def create_repo(self, request: Json) -> Json:
+        """
+        Create a new repository based on the provided request JSON. 
+
+        Parameters:
+            request (Json): A JSON object containing keys "repoName", "visibility", and "connectionToken".
+
+        Returns:
+            Json: A JSON object representing the result of the repository creation process. 
+        """
         repo_name = request["repoName"]
         visibility = request["visibility"]
         connection_token = request["connectionToken"]
@@ -197,6 +250,15 @@ class ServerLogic:
         return pack_create_repo(f"{username}/{repo_name}")
 
     def branches(self, request: Json) -> Json:
+        """
+        A function to retrieve branches of a repository given a JSON request.
+        
+        Parameters:
+            request (Json): A JSON object containing repository information.
+        
+        Returns:
+            Json: A JSON object containing information about the branches of the repository.
+        """
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
         if isinstance(result, dict):
@@ -208,6 +270,15 @@ class ServerLogic:
         return pack_branches(branches)
 
     def view_file(self, request: Json) -> Json:
+        """
+        A function to view a file based on the repo, file path and branch.
+        
+        Parameters:
+            request (Json): A JSON object containing information about the file to be viewed.
+        
+        Returns:
+            Json: The result of viewing the file, either the file content or an error message.
+        """
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
         if isinstance(result, dict):
@@ -236,6 +307,15 @@ class ServerLogic:
                 return pack_error("File doesn't exist")
 
     def project_directory(self, request: Json) -> Json:
+        """
+        A function to handle requests for files within a directory in a repository.
+        
+        Parameters:
+            request (Json): A JSON object containing information about the request, including the repository, directory, and branch.
+        
+        Returns:
+            Json: A JSON object representing the result of the request, which could be project directories or an error message.
+        """
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
         if isinstance(result, dict):
@@ -273,6 +353,15 @@ class ServerLogic:
 
     @staticmethod
     def pack_git_commits(commits: List[GitCommit]) -> List[Json]:
+        """
+        Generate a JSON representation of a list of Git commits.
+
+        Parameters:
+            commits (List[GitCommit]): A list of GitCommit objects to be processed.
+
+        Returns:
+            List[Json]: A list of JSON objects representing each Git commit.
+        """
         res = []
         for c in commits:
             date = datetime.datetime.fromtimestamp(c.authored_date).strftime(
@@ -285,6 +374,15 @@ class ServerLogic:
         return res
 
     def commits(self, request: Json) -> Json:
+        """
+        A function to retrieve a specified number of commits from a given repository branch.
+        
+        Parameters:
+            request (Json): A JSON object containing information about the repository and connection token.
+        
+        Returns:
+            Json: A JSON object containing the specified number of commits from the repository branch.
+        """
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
         if isinstance(result, dict):
@@ -306,6 +404,15 @@ class ServerLogic:
             return pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
 
     def pr_commits(self, request: Json) -> Json:
+        """
+        A function that processes and returns commits related to a pull request.
+
+        Parameters:
+            request (Json): A JSON object containing the pull request ID and connection token. and commits page
+
+        Returns:
+            Json: A JSON object representing the commits.
+        """
         error = self.validate_issue_or_pr(
             request["id"], request["connectionToken"], "PR"
         )
@@ -341,6 +448,15 @@ class ServerLogic:
             return pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
 
     def diff(self, request: Json) -> Json:
+        """
+        Generate a diff for a given commit hash in a repository.
+
+        Parameters:
+            request (Json): A JSON object containing the repository name, connection token, and commit hash.
+
+        Returns:
+            Json: A JSON object with the port and token for the diff as a file request
+        """
         full_repo_name = cast(str, request["repo"])
         result = self.validate_repo_request(full_repo_name, request["connectionToken"])
         if isinstance(result, dict):
@@ -360,6 +476,15 @@ class ServerLogic:
         return pack_diff(file_com.get_port(), token)
 
     def create_issue(self, request: Json) -> Json:
+        """
+        Create an issue for a given repository.
+
+        Args:
+            request (Json): The JSON request containing information about the repository and the issue.
+        
+        Returns:
+            Json: The JSON response containing information about the created issue.
+        """
         full_repo_name = cast(str, request["repo"])
         error_or_repo = self.validate_repo_request(
             full_repo_name, request["connectionToken"]
@@ -378,6 +503,15 @@ class ServerLogic:
         return pack_create_issue()
 
     def view_issues(self, request: Json) -> Json:
+        """
+        A function to view the list of issues for a given repository.
+        
+        Parameters:
+            request (Json): A JSON object containing the repo and connection token.
+        
+        Returns:
+            Json: A JSON object containing the list of issues for the repository.
+        """
         full_repo_name = cast(str, request["repo"])
         error_or_repo = self.validate_repo_request(
             full_repo_name, request["connectionToken"]
@@ -395,6 +529,17 @@ class ServerLogic:
     def validate_issue_or_pr(
         self, id: int, connection_token: str, issue: IssuePr
     ) -> Optional[Json]:
+        """
+        Validate the given issue or PR with the provided ID, connection token, and issue or PR object.
+
+        Parameters:
+            id (int): The ID of the issue or PR to validate.
+            connection_token (str): The connection token for authorization.
+            issue (IssuePr): Enum to say if you want to validate an issue or PR
+
+        Returns:
+            Optional[Json]: Returns an error message if the ID is invalid or the user doesn't have permissions, otherwise returns None.
+        """
         match issue:
             case "Issue":
                 repo = self.db.repo_and_repo_owner_of_issue(id)
@@ -411,6 +556,13 @@ class ServerLogic:
         return None
 
     def delete_issue(self, request: Json) -> Json:
+        """
+        A function that deletes an issue based on the provided request JSON. 
+        Parameters:
+            - request (Json) - JSON object containing the id and connectionToken of the issue to be deleted.
+        Returns:
+            - Json: JSON response indicating the success or failure of the deletion operation.
+        """
         error = self.validate_issue_or_pr(
             request["id"], request["connectionToken"], "Issue"
         )
@@ -421,6 +573,15 @@ class ServerLogic:
         return pack_delete_issue()
 
     def update_issue(self, request: Json) -> Json:
+        """
+        Update an issue with the provided information.
+
+        Parameters:
+            request (Json): A JSON object containing the details for updating the issue.
+
+        Returns:
+            Json: JSON response indicating the success or failure of the update operation.
+        """
         id = request["id"]
         connectionToken = request["connectionToken"]
         error = self.validate_issue_or_pr(id, connectionToken, "Issue")
@@ -431,6 +592,15 @@ class ServerLogic:
         return pack_update_issue()
 
     def create_pull_request(self, request: Json) -> Json:
+        """
+        A function to create a pull request with the given request JSON object.
+        
+        Parameters:
+            request (Json): The JSON object containing information about the pull request.
+            
+        Returns:
+            Json: The result of the pull request creation process, either an error or the created pull request.
+        """
         error_or_repo = self.validate_repo_request(
             request["repo"], request["connectionToken"]
         )
@@ -461,6 +631,15 @@ class ServerLogic:
         return pack_create_pull_request()
 
     def view_pull_requests(self, request: Json) -> Json:
+        """
+        A method to view pull requests based on the given request JSON.
+        
+        Parameters:
+            request (Json): The request JSON containing repo and connection token.
+        
+        Returns:
+            Json: A JSON response with the view of pull requests.
+        """
         error_or_repo = self.validate_repo_request(
             request["repo"], request["connectionToken"]
         )
@@ -487,6 +666,15 @@ class ServerLogic:
         )
 
     def delete_pull_request(self, request: Json) -> Json:
+        """
+        Deletes a pull request based on the provided request JSON object.
+
+        Parameters:
+            request (Json): The JSON object containing the pull request id and connection token.
+
+        Returns:
+            Json: The JSON response after deleting the pull request.
+        """
         id = request["id"]
         connectionToken = request["connectionToken"]
         error = self.validate_issue_or_pr(id, connectionToken, "PR")
@@ -497,6 +685,15 @@ class ServerLogic:
         return pack_delete_pr()
 
     def update_pull_request(self, request: Json) -> Json:
+        """
+        Update a pull request in the database with the provided information.
+
+        Parameters:
+            request (Json): A JSON object containing the details of the pull request including id, connectionToken, fromBranch, intoBranch, and title.
+
+        Returns:
+            Json: A JSON object representing the updated pull request.
+        """
         id = request["id"]
         connectionToken = request["connectionToken"]
         from_branch = request["fromBranch"]
@@ -524,6 +721,18 @@ class ServerLogic:
     def validate_pr_branches(
         self, repo: Repo, id: int, into_branch: str, from_branch: str
     ) -> Optional[Json]:
+        """
+        Validate the branches of a pull request.
+
+        Parameters:
+            repo (Repo): The repository object.
+            id (int): The id of the pull request.
+            into_branch (str): The branch being merged into.
+            from_branch (str): The branch being merged from.
+
+        Returns:
+            Optional[Json]: None if branches are valid, error message if not.
+        """
 
         repo_branches = branches_of_repo(repo)
         if into_branch not in repo_branches or from_branch not in repo_branches:
@@ -532,6 +741,15 @@ class ServerLogic:
         return None
 
     def pr_diff(self, request: Json) -> Json:
+        """
+        A function to calculate the difference between two branches in a pull request.
+
+        Parameters:
+            request (Json): The JSON object containing the request data.
+
+        Returns:
+            Json: A JSON object with the port and token for the diff as a file request
+        """
         error = self.validate_issue_or_pr(
             request["id"], request["connectionToken"], "PR"
         )
@@ -570,11 +788,29 @@ class ServerLogic:
         return pack_diff(file_com.get_port(), token)
 
     def validate_connection(self, request: Json) -> Json:
+        """
+        Validate the connection using the provided request JSON object.
+
+        Parameters:
+            request (Json): The JSON object containing the token for validation.
+
+        Returns:
+            Json: The result of the validation process.
+        """
         return pack_validate_password(
             request["tokenForValidation"] in self.connected_client
         )
 
     def search_repo(self, request: Json) -> Json:
+        """
+        A function that searches the repository based on a given search query.
+        
+        Parameters:
+            request (Json): The JSON object containing the search query.
+        
+        Returns:
+            Json: The search results packed in a JSON object.
+        """
         all_repos = self.db.all_repos()
         names = list(map(lambda a: f"{a[1]}/{a[2]}", all_repos))
         results: List[Tuple[str, int]] = cast(
@@ -588,4 +824,13 @@ class ServerLogic:
 
 
 def branches_of_repo(repo: Repo) -> List[str]:
+    """
+    Generate a list of branch names for the given repository.
+
+    Parameters:
+    repo (Repo): The repository for which to list branches.
+
+    Returns:
+    List[str]: A list of branch names without the 'origin/' prefix.
+    """
     return [branch.name.removeprefix("origin/") for branch in repo.remote().refs]
