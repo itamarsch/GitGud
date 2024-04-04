@@ -7,4 +7,4 @@ Action = Callable[[Json], Json]
 IssuePr = Literal["Issue", "PR"]
 
 
-commit_page_size = 20
+commit_page_size = 60
