@@ -37,7 +37,6 @@ class IssueEditor(BaseScreen):
 
         # Content Field
         self.content_field = wx.TextCtrl(self, style=wx.TE_MULTILINE)
-        self.content_field.SetHint("Content")
 
         if self.initial_issue:
             self.content_field.WriteText(self.initial_issue["content"])
