@@ -1,5 +1,6 @@
 from typing_extensions import override
 import wx
+import wx.richtext
 
 from base_screen import BaseScreen
 from main import MainFrame
@@ -14,23 +15,28 @@ class Diff(BaseScreen):
     @override
     def add_children(self, main_sizer):
 
-        diff_textctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
+        diff_richtextctrl = wx.richtext.RichTextCtrl(self, style=wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER)
 
         font = wx.Font(
             14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
-        diff_textctrl.SetFont(font)
+        diff_richtextctrl.SetFont(font)
+
+        # Clear existing content
+        diff_richtextctrl.Clear()
+
         # Split the string into lines
         lines = self.diff.split("\n")
 
-        # Iterate over the lines and set background color based on starting character
         for line in lines:
             if line.startswith("+"):
-                diff_textctrl.SetDefaultStyle(wx.TextAttr(wx.GREEN))
+                diff_richtextctrl.BeginTextColour(wx.GREEN)
             elif line.startswith("-"):
-                diff_textctrl.SetDefaultStyle(wx.TextAttr(wx.RED))
+                diff_richtextctrl.BeginTextColour(wx.RED)
             else:
-                diff_textctrl.SetDefaultStyle(wx.TextAttr(wx.NullColour))
-            diff_textctrl.AppendText(line + "\n")
+                diff_richtextctrl.BeginTextColour(wx.BLACK)
+            diff_richtextctrl.WriteText(line + "\n")
+            diff_richtextctrl.EndTextColour()
 
-        main_sizer.Add(diff_textctrl, 15, wx.CENTER | wx.EXPAND)
+
+        main_sizer.Add(diff_richtextctrl, 15, wx.CENTER | wx.EXPAND)
