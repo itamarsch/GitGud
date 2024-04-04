@@ -65,9 +65,9 @@ class MainFrame(wx.Frame):
         self.screens[-1] = panel()
         self.screens[-1].Show()
         self.sizer.Remove(0)
+        self.sizer.Add(self.screens[-1], 1, wx.EXPAND)
         self.SetSizer(self.sizer)
         self.Layout()
-        self.sizer.Add(self.screens[-1], 1, wx.EXPAND)
 
 
 if __name__ == "__main__":
