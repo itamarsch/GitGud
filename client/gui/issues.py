@@ -22,7 +22,6 @@ class Issues(BaseScreen):
 
     @override
     def on_load(self):
-        print("On load")
         self.request_issues()
 
     @override
