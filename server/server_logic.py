@@ -297,7 +297,9 @@ class ServerLogic:
         with RepoClone(full_repo_name) as r:
             fifty_first_commits = list(
                 r.iter_commits(
-                    branch, skip=page * commit_page_size, max_count=commit_page_size
+                    f"origin/{branch}",
+                    skip=page * commit_page_size,
+                    max_count=commit_page_size,
                 )
             )
 
@@ -348,11 +350,12 @@ class ServerLogic:
             hash = request["hash"]
             try:
                 commit = r.commit(hash)
+                parent = r.commit(f"{hash}~1")
             except Exception:
                 return pack_error("Invalid commit hash")
 
             token = token_urlsafe(32)
-            full_diff = get_diff_string(commit.parents[0].diff(commit))
+            full_diff = get_diff_string(parent.diff(commit))
             file_com = FileComm(full_diff.encode(), token)
         return pack_diff(file_com.get_port(), token)
 
