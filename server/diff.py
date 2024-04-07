@@ -60,7 +60,7 @@ def triple_dot_diff(repo: Repo, into_branch: str, from_branch: str):
     #     return None
     #
     # diff = base_commit[0].diff(from_branch)
-    return repo.git.diff(f"{from_branch}...{into_branch}")
+    return repo.git.diff(f"{into_branch}...{from_branch}")
 
 
 def make_diff_str(add: bool, diff: str) -> str:
