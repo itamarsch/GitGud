@@ -474,7 +474,7 @@ class ServerLogic:
             token = token_urlsafe(32)
             diff: str = commit.repo.git.show(commit.hexsha)
 
-            file_com = FileComm(get_diff_string(diff).encode(), token)
+            file_com = FileComm(json.dumps(get_diff_string(diff)).encode(), token)
         return pack_diff(file_com.get_port(), token)
 
     def create_issue(self, request: Json) -> Json:
@@ -786,7 +786,7 @@ class ServerLogic:
             token = token_urlsafe(32)
             full_diff = get_diff_string(diff)
 
-            file_com = FileComm(full_diff.encode(), token)
+            file_com = FileComm(json.dumps(full_diff).encode(), token)
         return pack_diff(file_com.get_port(), token)
 
     def validate_connection(self, request: Json) -> Json:

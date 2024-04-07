@@ -5,7 +5,7 @@ import unidiff.patch
 
 
 from typing import List, cast
-from gitgud_types import commit_page_size
+from gitgud_types import Json, commit_page_size
 
 
 def commits_between_branches(
@@ -78,42 +78,52 @@ def make_diff_str(add: bool, diff: str) -> str:
     return "\n".join([f"{add_remove_str}{line}" for line in diff.splitlines()])
 
 
-def get_diff_string(diff: str) -> str:
-    """Captures git diff output, parses it using unidiff, formats it, and stores in a string.
+def get_diff_string(diff: str) -> Json:
 
-    Returns:
-        str: The formatted git diff output with renames addressed.
-    """
-
-    formatted_diff = ""  # Initialize empty string to store output
+    # List of files
+    # Each file contains a modification type and a list of hunks
+    # Each hunk contains a list of lines
+    formatted_diff = []
 
     patch_set = unidiff.PatchSet(diff.splitlines())
 
     for file in patch_set:
         file = cast(unidiff.PatchedFile, file)
-        if file.is_removed_file:
-            formatted_diff += f"Removed: {file.source_file} \n"
-        elif file.is_added_file:
-            formatted_diff += f"New file: {file.target_file}\n"
-        elif file.is_rename:
-            formatted_diff += f"Renamed: {file.source_file} -> {file.target_file}\n"
 
-        for i, hunk in enumerate(file):
-            if i == 0:
-                formatted_diff += (
-                    f"Modified: ---{file.source_file}  +++{file.target_file}\n"
-                )
+        file_json = {}
+        if file.is_removed_file:
+            file_json["type"] = f"Remove"
+            file_json["file_removed"] = file.source_file
+        elif file.is_added_file:
+            file_json["type"] = f"Add"
+            file_json["file_added"] = file.target_file
+        elif file.is_rename:
+            file_json["type"] = f"Rename"
+            file_json["from"] = file.source_file
+            file_json["to"] = file.target_file
+        else:
+            file_json["type"] = f"Modified"
+            file_json["file_modified"] = file.target_file
+
+        file_json["hunks"] = []
+        for hunk in file:
             hunk = cast(unidiff.Hunk, hunk)
+
+            hunk_lines = []
 
             for line in hunk:
                 line = cast(unidiff.patch.Line, line)
 
                 if line.is_added:
-                    formatted_diff += "+" + line.value + "\n"
+                    hunk_lines.append({"type": "Add", "value": line.value})
                 elif line.is_removed:
-                    formatted_diff += "-" + line.value + "\n"
+                    hunk_lines.append({"type": "Remove", "value": line.value})
                 else:
-                    formatted_diff += line.value + "\n"
-            formatted_diff += "\n"  # Print newline after each hunk
+                    hunk_lines.append({"type": "Context", "value": line.value})
+                hunk_lines[-1]["target_line_no"] = line.target_line_no
+                hunk_lines[-1]["source_line_no"] = line.source_line_no
+            file_json["hunks"].append({"lines": hunk_lines})
 
-    return formatted_diff
+        formatted_diff.append(file_json)
+
+    return {"diff": formatted_diff}
