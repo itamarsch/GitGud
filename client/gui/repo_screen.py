@@ -1,6 +1,6 @@
 from typing_extensions import override
 import wx
-from typing import cast
+from typing import List, cast
 from base_screen import BaseScreen
 from gui.commits import Commits
 from gui.file_screen import FileContent
@@ -79,7 +79,7 @@ class RepoScreen(BaseScreen):
             repo_create_button,
         ]
         for i, widget in enumerate(repo_options_widget):
-            repo_options.Add(widget, 1, wx.EXPAND)
+            repo_options.Add(widget, 2, wx.EXPAND)
             if i != len(repo_options_widget) - 1:
                 repo_options.AddSpacer(5)
 
@@ -98,6 +98,10 @@ class RepoScreen(BaseScreen):
         main_sizer.Add(self.directory_list, 10, wx.CENTER | wx.EXPAND)
 
     def on_text_changed(self, event):
+        """
+        Handle the text changed event, perform a search for repository suggestions based on the entered query and display them.
+        
+        """
         query = event.GetEventObject().GetValue()
         if query:
 
@@ -110,6 +114,9 @@ class RepoScreen(BaseScreen):
             gui_run_request(self, pack_search_repo(query), on_finished)
 
     def on_search_result_selected(self, _):
+        """
+        Handle the event when a search result is selected. Updates the repository text and triggers the on_repo_enter method.
+        """
         selection = self.repo_suggestions.GetSelection()
         if selection != wx.NOT_FOUND:
             repo = self.repo_suggestions.GetString(selection)
@@ -118,6 +125,10 @@ class RepoScreen(BaseScreen):
             self.on_repo_enter(None)
 
     def on_repo_enter(self, _):
+        """
+        A function that a called once a rpeo is selected.
+        It retreives the selected repo and requests the branches.
+        """
 
         def on_finished(response: Json):
             self.branches_list.Clear()
@@ -136,6 +147,11 @@ class RepoScreen(BaseScreen):
         )
 
     def on_branch_selected(self, _):
+        """
+        This function handles the event when a branch is selected. 
+        It gets the selected branch from the list and updates the 'branch' and 'directory' attributes accordingly. 
+        It then calls 'request_directory_structure' to update the directory structure based on the new branch.
+        """
         selection = self.branches_list.GetSelection()
         if selection != wx.NOT_FOUND:
             branch = self.branches_list.GetString(selection)
@@ -146,6 +162,10 @@ class RepoScreen(BaseScreen):
             self.request_directory_structure()
 
     def on_commits_screen_button(self, _):
+        """
+        A function that handles button clicks on the commits screen. 
+        Checks if repository and branch are filled, shows a message box if not, then pushes the commits screen using the parent's connection token and repo information.
+        """
         if not self.repo or not self.branch:
             wx.MessageBox("Please fill in fields")
             return
@@ -162,6 +182,9 @@ class RepoScreen(BaseScreen):
         )
 
     def on_issues_screen_button(self, _):
+        """
+        Handles the button click on the issues screen and navigates to the issues screen with the given repository and connection token.
+        """
         if not self.repo:
             wx.MessageBox("Please fill in fields")
             return
@@ -171,6 +194,11 @@ class RepoScreen(BaseScreen):
         )
 
     def on_pr_screen_button(self, _):
+        """
+        A function that handles the button click event on the pull request screen. 
+        It checks if the repository is filled, displays a message box if it's empty, 
+        and then pushes a new screen for pull requests 
+        """
         if not self.repo:
             wx.MessageBox("Please fill in fields")
             return
@@ -180,10 +208,17 @@ class RepoScreen(BaseScreen):
         )
 
     def copy_repo_url(self, _):
+        """
+        A function that copies the repository URL to the clipboard if a repository is set.
+        """
         if self.repo:
             pyperclip.copy(f"git@itamarfedora:{self.repo}.git")
 
     def on_file_selected(self, _):
+        """
+        A function that handles the event when a file is selected. 
+        It retrieves the selected file, checks if it's a directory, and based on that either updates the current directory and requests the directory structure or requests the selected file.
+        """
         selection = self.directory_list.GetSelection()
         if selection != wx.NOT_FOUND:
 
@@ -191,31 +226,53 @@ class RepoScreen(BaseScreen):
             if file_name.endswith("/"):
                 self.directory += file_name
                 self.request_directory_structure()
-                return
+            else:
+                self.request_file(file_name)
 
-            def on_finished(result: bytes):
-                try:
-                    file_content_str = result.decode()
-                    self.GetParent().push_screen(
-                        lambda: FileContent(
-                            self.GetParent(), file_content_str, file_name
-                        )
+
+    def request_file(self, file_name:str):
+        """
+        Requests a file with the given file name and displays its content in the GUI.
+        
+        Parameters:
+            file_name (str): The name of the file to request.
+        
+        Returns:
+            None
+        """
+        def on_finished(result: bytes):
+            try:
+                file_content_str = result.decode()
+                self.GetParent().push_screen(
+                    lambda: FileContent(
+                        self.GetParent(), file_content_str, file_name
                     )
-                except (UnicodeDecodeError, AttributeError):
-                    wx.MessageBox("File not string :(")
+                )
+            except (UnicodeDecodeError, AttributeError):
+                wx.MessageBox("File not string :(")
 
-            gui_request_file(
-                self,
-                pack_file_request(
-                    self.repo,
-                    self.connection_token,
-                    self.directory + file_name,
-                    self.branch,
-                ),
-                on_finished,
-            )
+        gui_request_file(
+            self,
+            pack_file_request(
+                self.repo,
+                self.connection_token,
+                self.directory + file_name,
+                self.branch,
+            ),
+            on_finished,
+        )
+
 
     def request_directory_structure(self):
+        """
+        Request the directory structure and update the directory list in the GUI.
+
+        Parameters:
+            self: The instance of the class.
+        
+        Returns:
+            None
+        """
         def on_finished(result: Json):
             self.directory_list.Clear()
             if not is_base_directory(self.directory):
@@ -236,6 +293,15 @@ class RepoScreen(BaseScreen):
 
 
 def is_base_directory(path: str) -> bool:
+    """
+    A function to check if the given path represents a base directory.
+    
+    Parameters:
+    path (str): The path to be checked.
+    
+    Returns:
+    bool: True if the path represents a base directory, False otherwise.
+    """
     dirs = [dir for dir in path.split("/") if dir]
 
     double_dots = [dir for dir in dirs if dir == ".."]

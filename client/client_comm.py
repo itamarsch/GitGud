@@ -50,6 +50,15 @@ class ClientComm:
         self.ip = addr
 
     def _exchange_keys(self, soc: socket.socket) -> EncryptionState:
+        """
+        A function to exchange keys with a socket using encryption and return the encryption state.
+
+        Parameters:
+            soc (socket.socket): The socket to exchange keys with.
+
+        Returns:
+            EncryptionState: The encryption state after key exchange.
+        """
         encryption = EncryptionState()
         initial_encryption_data = recv(soc, encryption_length_size).decode()
         encryption.parse_initial_message(initial_encryption_data)
@@ -59,6 +68,15 @@ class ClientComm:
         return encryption
 
     def run_request(self, data: Json) -> Json:
+        """
+        Runs a request with the provided data using socket communication.
+        
+        Parameters:
+            data (Json): The data to be sent in JSON format.
+        
+        Returns:
+            Json: The response data received after processing the request.
+        """
         soc = socket.socket()
         soc.connect(self.ip)
 
@@ -73,6 +91,16 @@ class ClientComm:
         return json.loads(result)
 
     def file_request(self, token: str, port: int) -> bytes:
+        """
+        Runs a file request using the provided token and port number.
+
+        Parameters:
+            token (str): The token to be used for the file request.
+            port (int): The port number to connect to.
+
+        Returns:
+            bytes: The decrypted file content.
+        """
         soc = socket.socket()
         soc.connect((self.ip[0], port))
 

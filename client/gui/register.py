@@ -60,6 +60,10 @@ class RegisterPanel(BaseScreen):
         main_sizer.Add(login_button, 0, wx.CENTER | wx.EXPAND)
 
     def on_register(self, _):
+        """
+        A callback function to handle the registration process. Retrieves user input, sends a registration request, 
+        and processes the result to obtain a connection token for further interaction with the application.        
+        """
         username = self.username_text.GetValue()
         password = hash_password.hash(self.password_text.GetValue())
         ssh_key = self.sshkey_text.GetValue()

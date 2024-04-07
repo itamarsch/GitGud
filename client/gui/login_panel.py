@@ -53,6 +53,12 @@ class LoginPanel(BaseScreen):
         self.GetParent().change_screen(lambda: RegisterPanel(self.GetParent()))
 
     def on_login(self, _):
+        """
+        A callback function called when the login button is pressed. 
+        It extracts the username and hashed password from the UI elements. 
+        Makes a GUI request with the login data 
+        Defines an inner function to handle the response and save the token to a file. 
+        """
         username = self.username_text.GetValue()
         password = hash_password.hash(self.password_text.GetValue())
 

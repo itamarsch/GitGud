@@ -52,11 +52,27 @@ class BaseScreen(wx.Panel):
         self.SetSizerAndFit(outer_sizer)
         self.Layout()
 
-    def on_load(self):
+    def on_reload(self):
+        """ 
+        Function that can be overrided by the child class.
+        This function is called once a screen is reloaded after a pop of a screen on top of it
+        """
         pass
 
+
     def GetParent(self) -> MainFrame:
+        """
+        A method for getting the parent of the `BaseScreen` which os always a `MainFrame`
+
+        """
         return cast(MainFrame, super().GetParent())
 
     def add_children(self, main_sizer: wx.BoxSizer):
+        """
+        Function that should be overrided by the child class.
+        Adds all ui widgets to the main sizer
+
+        Parameters:
+            main_sizer (wx.BoxSizer): The main sizer to add children to.
+        """
         pass

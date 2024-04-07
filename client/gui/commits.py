@@ -56,6 +56,12 @@ class Commits(BaseScreen):
         main_sizer.Add(pages_buttons, 1, wx.CENTER | wx.EXPAND)
 
     def change_page(self, page: int):
+        """
+        Request commits of new page and change the page number displayed on the page_text label to the given page. 
+        
+        Parameters:
+            page (int): The new page number to be displayed.  
+        """
         self.page = page
         self.page_text.SetLabel(str(page))
         self.request_commits()

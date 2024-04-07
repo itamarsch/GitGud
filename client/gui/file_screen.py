@@ -14,6 +14,9 @@ from main import MainFrame
 
 
 class NoopLexer(RegexLexer):
+    """
+    A pygments kexer that does nothing for unkown file types
+    """
     name = "null"
     aliases = []
     filenames = []
@@ -33,7 +36,18 @@ class FileContent(BaseScreen):
 
     @override
     def add_children(self, main_sizer):
+        formatted_content = self.get_highlighted_html()
 
+
+        file_styled_text = cast(wx.html2.WebView, wx.html2.WebView.New(self))
+        file_styled_text.SetPage(formatted_content, "")
+
+        main_sizer.Add(file_styled_text, 15, wx.CENTER | wx.EXPAND)
+
+    def get_highlighted_html(self) -> str:
+        """
+        Get the highlighted HTML content of the file using Pygments.
+        """
         try:
             lexer = get_lexer_for_filename(self.file_name)
         except pygments.util.ClassNotFound:
@@ -43,9 +57,5 @@ class FileContent(BaseScreen):
         formatter = HtmlFormatter(
             full=True, style="gruvbox-dark", cssstyles=f"font-size: 25px;", linenos=True
         )
-        formatted_content = highlight(self.file_content, lexer, formatter)
+        return highlight(self.file_content, lexer, formatter)
 
-        file_styled_text = cast(wx.html2.WebView, wx.html2.WebView.New(self))
-        file_styled_text.SetPage(formatted_content, "")
-
-        main_sizer.Add(file_styled_text, 15, wx.CENTER | wx.EXPAND)

@@ -28,7 +28,10 @@ class PullRequests(BaseScreen):
         super().__init__(parent, 1, 1, title="Pull Requests")
 
     @override
-    def on_load(self):
+    def on_reload(self):
+        """
+        Request pr on reload of screen because prs may have been deleted or edited
+        """
         self.request_prs()
 
     @override
@@ -57,20 +60,29 @@ class PullRequests(BaseScreen):
             self.create_popup_menu(event)
 
     def create_popup_menu(self, _):
+        """
+        Create a popup menu with options to Delete, Diff, Commits, and Edit.
+        Bind event handlers for each menu option.
+        Display the menu and destroy it after it's used.
+        """
         menu = wx.Menu()
         delete = menu.Append(wx.ID_ANY, "Delete")
         diff = menu.Append(wx.ID_ANY, "Diff")
         commits = menu.Append(wx.ID_ANY, "Commits")
         edit = menu.Append(wx.ID_ANY, "Edit")
-        self.Bind(wx.EVT_MENU, self.on_deleted, delete)
+        self.Bind(wx.EVT_MENU, self.on_pr_deleted, delete)
         self.Bind(wx.EVT_MENU, self.on_pr_diff, diff)
         self.Bind(wx.EVT_MENU, self.on_pr_edit, edit)
-        self.Bind(wx.EVT_MENU, self.on_commits, commits)
+        self.Bind(wx.EVT_MENU, self.on_pr_commits_request, commits)
 
         self.PopupMenu(menu)
         menu.Destroy()
 
-    def on_commits(self, _):
+    def on_pr_commits_request(self, _):
+        """
+        A function that handles the request for PR commits. Retrieves the PR index from the selection, 
+        extracts the PR ID, and pushes the Commits screen to display commits related to the selected PR.
+        """
         pr_index: int = self.pr_list.GetSelection()
         pr_id = self.prs[pr_index]["id"]
         self.GetParent().push_screen(
@@ -82,7 +94,10 @@ class PullRequests(BaseScreen):
             )
         )
 
-    def on_deleted(self, _):
+    def on_pr_deleted(self, _):
+        """
+        A callback function to handle pull request deletion. 
+        """
         pr_index: int = self.pr_list.GetSelection()
         pr_id = self.prs[pr_index]["id"]
 
@@ -92,6 +107,9 @@ class PullRequests(BaseScreen):
         gui_run_request(self, pack_delete_pr(pr_id, self.connection_token), on_finished)
 
     def on_pr_diff(self, _):
+        """
+        A function that handles the PR diff request by retrieving the selected PR, fetching the diff, and displaying it. 
+        """
         pr_index: int = self.pr_list.GetSelection()
         pr = self.prs[pr_index]
 
@@ -103,6 +121,10 @@ class PullRequests(BaseScreen):
         )
 
     def on_pr_edit(self, _):
+        """
+        A function to handle the event of editing a pull request. 
+        It retrieves the selected pull request from the list, and then it pushes a PullRequestEditor screen.
+        """
         pr_index: int = self.pr_list.GetSelection()
         pr = self.prs[pr_index]
 
@@ -113,6 +135,9 @@ class PullRequests(BaseScreen):
         )
 
     def request_prs(self):
+        """
+        A function that requests pull requests and updates the PR list. 
+        """
         def on_finished(result: Json):
             pull_requests = cast(List[PullRequest], result["pullRequests"])
             self.prs = pull_requests

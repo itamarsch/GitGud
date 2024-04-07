@@ -31,11 +31,15 @@ class RepoCreate(BaseScreen):
         )
 
     def on_create(self, _):
+        """
+        Execute the creation of a new repository by obtaining the repository name and public status from the UI elements and sending a request to create the repository with the provided details. 
+        Upon completion, the full repository name is retrieved from the result JSON object, and the screen is popped to return to the previous.
+        """
         repo_name = self.repo_name_text.GetValue()
         public = self.public_checkbox.GetValue()
 
         def on_finished(result: Json):
-            full_repo_name = result["fullRepoName"]
+            full_repo_name = result["fullRepoName"] # TODO: pop into newly created repo by passing parameters to pop
             self.GetParent().pop_screen()
 
         gui_run_request(

@@ -21,7 +21,10 @@ class Issues(BaseScreen):
         super().__init__(parent, 1, 1, title="Issues")
 
     @override
-    def on_load(self):
+    def on_reload(self):
+        """
+        Request issues on reload of screen because prs may have been deleted or edited
+        """
         self.request_issues()
 
     @override
@@ -50,6 +53,11 @@ class Issues(BaseScreen):
             self.create_popup_menu(event)
 
     def create_popup_menu(self, _):
+        """
+        Create a popup menu with options for Delete, View, and Edit. 
+        Bind event handlers for each option to corresponding methods. 
+        Display the menu and destroy it after it's used.
+        """
         menu = wx.Menu()
         delete = menu.Append(wx.ID_ANY, "Delete")
         view = menu.Append(wx.ID_ANY, "View")
@@ -62,6 +70,10 @@ class Issues(BaseScreen):
         menu.Destroy()
 
     def on_deleted(self, _):
+        """
+        A function that handles when an item is deleted. 
+        It retrieves the index of the selected issue, gets the corresponding issue ID. It then initiates the deletion request and calls the function to request updated issues.
+        """
         issue_index = self.issues_list.GetSelection()
         issue_id = cast(Issue, self.issues[issue_index])["id"]
 
@@ -73,12 +85,21 @@ class Issues(BaseScreen):
         )
 
     def on_issue_view(self, _):
+        """
+        A function that handles the action when an issue is viewed. 
+        It retrieves the selected issue from a list, then pushes a screen to view the selected issue.
+        """
         issue_index = self.issues_list.GetSelection()
         issue = cast(Issue, self.issues[issue_index])
 
         self.GetParent().push_screen(lambda: IssueViewer(self.GetParent(), issue))
 
     def on_issue_edit(self, _):
+        """
+        Retrieves the index of the selected issue from the issues_list,
+        Retrieves the selected issue from the issues list using the obtained index.
+        Pushes the IssueEditor screen
+        """
         issue_index = self.issues_list.GetSelection()
         issue = cast(Issue, self.issues[issue_index])
 
@@ -89,6 +110,9 @@ class Issues(BaseScreen):
         )
 
     def request_issues(self):
+        """
+        Generate a request for issues and update the GUI with the retrieved information.
+        """
         def on_finished(result: Json):
             issues = cast(List[Issue], result["issues"])
             self.issues = issues

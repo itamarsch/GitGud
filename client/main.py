@@ -21,6 +21,9 @@ class MainFrame(wx.Frame):
         self.client_com = client_com
 
         self.screens: List[BaseScreen] = []
+        self.SetPalette(wx.NullPalette)
+        self.SetBackgroundColour('#1E1E1E')
+        self.SetForegroundColour('#FFFFFF')
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -38,6 +41,14 @@ class MainFrame(wx.Frame):
         self.Show()
 
     def push_screen(self, screen_fn: Callable[[], BaseScreen]):
+        """
+        Pushes a new screen onto the screen stack and sets it as the active screen. 
+        Hides the previous screen if there is one. 
+        Parameters:
+            screen_fn: A Callable that returns a BaseScreen, representing the function to generate the new screen.
+        Returns:
+            None
+        """
         if self.screens:
             self.screens[-1].Hide()
             self.sizer.Remove(0)
@@ -51,16 +62,28 @@ class MainFrame(wx.Frame):
         self.Layout()
 
     def pop_screen(self):
+        """
+        Pops the top screen, hides it, and then shows the new top screen. 
+        """
         self.screens[-1].Hide()
         self.screens.pop()
         self.screens[-1].Show()
-        self.screens[-1].on_load()
+        self.screens[-1].on_reload()
         self.sizer.Remove(0)
         self.sizer.Add(self.screens[-1], 1, wx.EXPAND)
         self.SetSizer(self.sizer)
         self.Layout()
 
     def change_screen(self, panel: Callable[[], BaseScreen]):
+        """
+        Changes the current screen to the one provided by the panel parameter.
+
+        Parameters:
+            panel (Callable[[], BaseScreen]): A function that returns a BaseScreen instance.
+
+        Returns:
+            None
+        """
         self.screens[-1].Hide()
         self.screens[-1] = panel()
         self.screens[-1].Show()

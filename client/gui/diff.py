@@ -15,28 +15,32 @@ class Diff(BaseScreen):
     @override
     def add_children(self, main_sizer):
 
-        diff_richtextctrl = wx.richtext.RichTextCtrl(self, style=wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER)
+        self.diff_richtextctrl = wx.richtext.RichTextCtrl(self, style=wx.VSCROLL|wx.HSCROLL|wx.NO_BORDER)
 
         font = wx.Font(
             14, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )
-        diff_richtextctrl.SetFont(font)
+        self.diff_richtextctrl.SetFont(font)
 
-        # Clear existing content
-        diff_richtextctrl.Clear()
+        self.write_and_color_diff()
 
-        # Split the string into lines
+
+
+        main_sizer.Add(self.diff_richtextctrl, 15, wx.CENTER | wx.EXPAND)
+
+    def write_and_color_diff(self):
+        """
+        This function writes and color-codes the lines of a difference string in the rich text control. 
+        Lines starting with '+' are colored green, those starting with '-' are red, and the rest are black.
+        """
+        self.diff_richtextctrl.Clear()
         lines = self.diff.split("\n")
-
         for line in lines:
             if line.startswith("+"):
-                diff_richtextctrl.BeginTextColour(wx.GREEN)
+                self.diff_richtextctrl.BeginTextColour(wx.GREEN)
             elif line.startswith("-"):
-                diff_richtextctrl.BeginTextColour(wx.RED)
+                self.diff_richtextctrl.BeginTextColour(wx.RED)
             else:
-                diff_richtextctrl.BeginTextColour(wx.BLACK)
-            diff_richtextctrl.WriteText(line + "\n")
-            diff_richtextctrl.EndTextColour()
-
-
-        main_sizer.Add(diff_richtextctrl, 15, wx.CENTER | wx.EXPAND)
+                self.diff_richtextctrl.BeginTextColour(wx.BLACK)
+            self.diff_richtextctrl.WriteText(line + "\n")
+            self.diff_richtextctrl.EndTextColour()

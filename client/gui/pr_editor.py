@@ -66,7 +66,12 @@ class PullRequestEditor(BaseScreen):
         main_sizer.Add(branches_sizer, 0, wx.EXPAND)
         main_sizer.AddSpacer(5)
 
-        def on_branches(response: Json):
+        def on_branches_received(response: Json):
+            """
+            Set the branches received from the JSON response to the appropriate attributes.
+            Clear and append the branches to the from_branches and into_branches.
+            If initial_pr is True, set the selection based on the initial PR's fromBranch and intoBranch.
+            """
             self.branches = cast(List[str], response["branches"])
             self.from_branches.Clear()
             self.from_branches.Append(self.branches)
@@ -86,7 +91,7 @@ class PullRequestEditor(BaseScreen):
                 self.into_branches.SetSelection(into_index)
 
         gui_run_request(
-            self, pack_branches(self.repo, self.connection_token), on_branches
+            self, pack_branches(self.repo, self.connection_token), on_branches_received
         )
 
         if self.initial_pr:
@@ -98,6 +103,9 @@ class PullRequestEditor(BaseScreen):
         main_sizer.Add(submit_button, 0, wx.ALIGN_CENTER | wx.ALL)
 
     def on_submit(self, _):
+        """
+        A function that handles form submission. Retrieves title and branch selections, then either updates an existing pull request or creates a new one based on the initial_pr. 
+        """
         title = self.title_field.GetValue()
         if not self.branches:
             return

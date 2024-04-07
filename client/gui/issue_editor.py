@@ -52,6 +52,11 @@ class IssueEditor(BaseScreen):
         main_sizer.Add(submit_button, flag=wx.ALIGN_CENTER | wx.ALL, border=10)
 
     def on_submit(self, _):
+        """
+        A function that handles form submission. It retrieves the title and content from the form fields. 
+        If there is an initial issue, it updates the issue with the new title and content. 
+        If there is no initial issue, it creates a new issue with the provided title and content.
+        """
         title = self.title_field.GetValue()
         content = self.content_field.GetValue()
 
