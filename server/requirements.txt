@@ -2,3 +2,4 @@ GitPython
 psycopg2
 fuzzywuzzy
 python-Levenshtein
+unidiff

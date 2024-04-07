@@ -38,6 +38,7 @@ from gitgud_types import Action, IssuePr, Json, Address, commit_page_size
 from secrets import token_urlsafe
 from fuzzywuzzy import process
 
+
 from ssh_validation import validate_pubkey
 
 
@@ -71,7 +72,7 @@ class ServerLogic:
 
     def apply_action(self, json: Json) -> Json:
         """
-        A function to apply a given action to a JSON input assuming the keys are validated and return the result as JSON. 
+        A function to apply a given action to a JSON input assuming the keys are validated and return the result as JSON.
         Parameters:
             self: the instance of the class
             json: the JSON input
@@ -157,7 +158,7 @@ class ServerLogic:
         self, repo: str, connectionToken: str
     ) -> Union[Json, Tuple[int, str, bool]]:
         """
-        Validate the repository request by checking if the user and repo are valid. 
+        Validate the repository request by checking if the user and repo are valid.
         Parameters:
             repo (str): A string representing the user and repo separated by a forward slash.
             connectionToken (str): A string representing the connection token for the request.
@@ -182,10 +183,10 @@ class ServerLogic:
     def register(self, request: Json) -> Json:
         """
         A function to register a user with a unique username, password, and SSH key.
-        
+
         Parameters:
             request (Json): A JSON object containing the user's information including username, password, and SSH key.
-        
+
         Returns:
             Json: A JSON object containing a token after successful registration.
         """
@@ -227,13 +228,13 @@ class ServerLogic:
 
     def create_repo(self, request: Json) -> Json:
         """
-        Create a new repository based on the provided request JSON. 
+        Create a new repository based on the provided request JSON.
 
         Parameters:
             request (Json): A JSON object containing keys "repoName", "visibility", and "connectionToken".
 
         Returns:
-            Json: A JSON object representing the result of the repository creation process. 
+            Json: A JSON object representing the result of the repository creation process.
         """
         repo_name = request["repoName"]
         visibility = request["visibility"]
@@ -252,10 +253,10 @@ class ServerLogic:
     def branches(self, request: Json) -> Json:
         """
         A function to retrieve branches of a repository given a JSON request.
-        
+
         Parameters:
             request (Json): A JSON object containing repository information.
-        
+
         Returns:
             Json: A JSON object containing information about the branches of the repository.
         """
@@ -272,10 +273,10 @@ class ServerLogic:
     def view_file(self, request: Json) -> Json:
         """
         A function to view a file based on the repo, file path and branch.
-        
+
         Parameters:
             request (Json): A JSON object containing information about the file to be viewed.
-        
+
         Returns:
             Json: The result of viewing the file, either the file content or an error message.
         """
@@ -309,10 +310,10 @@ class ServerLogic:
     def project_directory(self, request: Json) -> Json:
         """
         A function to handle requests for files within a directory in a repository.
-        
+
         Parameters:
             request (Json): A JSON object containing information about the request, including the repository, directory, and branch.
-        
+
         Returns:
             Json: A JSON object representing the result of the request, which could be project directories or an error message.
         """
@@ -376,10 +377,10 @@ class ServerLogic:
     def commits(self, request: Json) -> Json:
         """
         A function to retrieve a specified number of commits from a given repository branch.
-        
+
         Parameters:
             request (Json): A JSON object containing information about the repository and connection token.
-        
+
         Returns:
             Json: A JSON object containing the specified number of commits from the repository branch.
         """
@@ -466,13 +467,14 @@ class ServerLogic:
             hash = request["hash"]
             try:
                 commit = r.commit(hash)
-                parent = r.commit(f"{hash}~1")
+                parent = commit.parents[0]
             except Exception:
                 return pack_error("Invalid commit hash")
 
             token = token_urlsafe(32)
-            full_diff = get_diff_string(parent.diff(commit))
-            file_com = FileComm(full_diff.encode(), token)
+            diff: str = commit.repo.git.show(commit.hexsha)
+
+            file_com = FileComm(get_diff_string(diff).encode(), token)
         return pack_diff(file_com.get_port(), token)
 
     def create_issue(self, request: Json) -> Json:
@@ -481,7 +483,7 @@ class ServerLogic:
 
         Parameters:
             request (Json): The JSON request containing information about the repository and the issue.
-        
+
         Returns:
             Json: The JSON response containing information about the created issue.
         """
@@ -505,10 +507,10 @@ class ServerLogic:
     def view_issues(self, request: Json) -> Json:
         """
         A function to view the list of issues for a given repository.
-        
+
         Parameters:
             request (Json): A JSON object containing the repo and connection token.
-        
+
         Returns:
             Json: A JSON object containing the list of issues for the repository.
         """
@@ -557,7 +559,7 @@ class ServerLogic:
 
     def delete_issue(self, request: Json) -> Json:
         """
-        A function that deletes an issue based on the provided request JSON. 
+        A function that deletes an issue based on the provided request JSON.
         Parameters:
             - request (Json) - JSON object containing the id and connectionToken of the issue to be deleted.
         Returns:
@@ -594,10 +596,10 @@ class ServerLogic:
     def create_pull_request(self, request: Json) -> Json:
         """
         A function to create a pull request with the given request JSON object.
-        
+
         Parameters:
             request (Json): The JSON object containing information about the pull request.
-            
+
         Returns:
             Json: The result of the pull request creation process, either an error or the created pull request.
         """
@@ -633,10 +635,10 @@ class ServerLogic:
     def view_pull_requests(self, request: Json) -> Json:
         """
         A method to view pull requests based on the given request JSON.
-        
+
         Parameters:
             request (Json): The request JSON containing repo and connection token.
-        
+
         Returns:
             Json: A JSON response with the view of pull requests.
         """
@@ -804,10 +806,10 @@ class ServerLogic:
     def search_repo(self, request: Json) -> Json:
         """
         A function that searches the repository based on a given search query.
-        
+
         Parameters:
             request (Json): The JSON object containing the search query.
-        
+
         Returns:
             Json: The search results packed in a JSON object.
         """

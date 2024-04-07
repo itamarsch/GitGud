@@ -1,9 +1,12 @@
 from git import Commit, Diff, DiffIndex, Repo
 from git.objects.base import IndexObject
+import unidiff
+import unidiff.patch
 
 
 from typing import List, cast
 from gitgud_types import commit_page_size
+
 
 def commits_between_branches(
     repo: Repo, from_branch: str, into_branch: str, page: int
@@ -51,23 +54,23 @@ def triple_dot_diff(repo: Repo, into_branch: str, from_branch: str):
     Returns:
         diff: The difference between the two branches.
     """
-    base_commit = cast(List[Commit], repo.merge_base(into_branch, from_branch))
-
-    if not base_commit:
-        return None
-
-    diff = base_commit[0].diff(from_branch)
-    return diff
+    # base_commit = cast(List[Commit], repo.merge_base(into_branch, from_branch))
+    #
+    # if not base_commit:
+    #     return None
+    #
+    # diff = base_commit[0].diff(from_branch)
+    return repo.git.diff(f"{from_branch}...{into_branch}")
 
 
 def make_diff_str(add: bool, diff: str) -> str:
     """
     A function that generates a diff string with added or removed markers for each line.
-    
+
     Parameters:
     - add (bool): A flag indicating whether to add or remove lines.
     - diff (str): The string containing the lines to be marked.
-    
+
     Returns:
     - str: The formatted string with markers for added or removed lines.
     """
@@ -75,49 +78,42 @@ def make_diff_str(add: bool, diff: str) -> str:
     return "\n".join([f"{add_remove_str}{line}" for line in diff.splitlines()])
 
 
-def get_diff_string(diff: DiffIndex) -> str:
-    """
-    Generate a string representation of the differences in the given DiffIndex object.
-
-    Parametes:
-        diff (DiffIndex): The DiffIndex object containing the differences.
+def get_diff_string(diff: str) -> str:
+    """Captures git diff output, parses it using unidiff, formats it, and stores in a string.
 
     Returns:
-        str: A string representing the differences in the format: 
-        "Rename: {old_name} -> {new_name}" for rename operations,
-        "Added: {path}\n{diff}" for added operations,
-        "Deleted: {path}\n{diff}" for deleted operations,
-        "Modified: {path}\n{old_diff}\n{new_diff}" for modified operations.
+        str: The formatted git diff output with renames addressed.
     """
 
-    diff_result: List[str] = []
-    for diff_item in diff.iter_change_type("R"):
-        diff_item: Diff
-        diff_result.append(f"Rename: {diff_item.rename_from} -> {diff_item.rename_to}")
-    for diff_item in diff.iter_change_type("A"):
-        diff_item: Diff
-        blob = cast(IndexObject, diff_item.b_blob).data_stream.read().decode("utf-8")
+    formatted_diff = ""  # Initialize empty string to store output
 
-        blob = make_diff_str(True, blob)
-        diff_result.append(f"Added: {diff_item.b_path}\n{blob}")
+    patch_set = unidiff.PatchSet(diff.splitlines())
 
-    for diff_item in diff.iter_change_type("D"):
-        diff_item: Diff
-        blob = cast(IndexObject, diff_item.a_blob).data_stream.read().decode("utf-8")
+    for file in patch_set:
+        file = cast(unidiff.PatchedFile, file)
+        if file.is_removed_file:
+            formatted_diff += f"Removed: {file.source_file} \n"
+        elif file.is_added_file:
+            formatted_diff += f"New file: {file.target_file}\n"
+        elif file.is_rename:
+            formatted_diff += f"Renamed: {file.source_file} -> {file.target_file}\n"
 
-        blob = make_diff_str(False, blob)
-        diff_result.append(f"Deleted: {diff_item.a_path}\n{blob}")
+        for i, hunk in enumerate(file):
+            if i == 0:
+                formatted_diff += (
+                    f"Modified: ---{file.source_file}  +++{file.target_file}\n"
+                )
+            hunk = cast(unidiff.Hunk, hunk)
 
-    for diff_item in diff.iter_change_type("M"):
-        diff_item: Diff
+            for line in hunk:
+                line = cast(unidiff.patch.Line, line)
 
-        b_blob: str = (
-            cast(IndexObject, diff_item.b_blob).data_stream.read().decode("utf-8")
-        )
-        a_blob: str = (
-            cast(IndexObject, diff_item.a_blob).data_stream.read().decode("utf-8")
-        )
-        b_blob = make_diff_str(True, b_blob)
-        a_blob = make_diff_str(False, a_blob)
-        diff_result.append(f"Modified: {diff_item.b_path}\n" + b_blob + "\n" + a_blob)
-    return ("\n" + "───────────────" + "\n").join(diff_result)
+                if line.is_added:
+                    formatted_diff += "+" + line.value + "\n"
+                elif line.is_removed:
+                    formatted_diff += "-" + line.value + "\n"
+                else:
+                    formatted_diff += line.value + "\n"
+            formatted_diff += "\n"  # Print newline after each hunk
+
+    return formatted_diff
