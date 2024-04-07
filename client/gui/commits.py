@@ -57,10 +57,10 @@ class Commits(BaseScreen):
 
     def change_page(self, page: int):
         """
-        Request commits of new page and change the page number displayed on the page_text label to the given page. 
-        
+        Request commits of new page and change the page number displayed on the page_text label to the given page.
+
         Parameters:
-            page (int): The new page number to be displayed.  
+            page (int): The new page number to be displayed.
         """
         self.page = page
         self.page_text.SetLabel(str(page))
@@ -73,7 +73,7 @@ class Commits(BaseScreen):
         commit = cast(Commit, self.commits[index])
 
         def on_finished(diff: bytes):
-            self.GetParent().push_screen(lambda: Diff(self.GetParent(), diff.decode()))
+            self.GetParent().push_screen(lambda: Diff(self.GetParent(), diff))
 
         gui_request_file(
             self,

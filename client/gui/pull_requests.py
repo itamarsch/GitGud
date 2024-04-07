@@ -80,7 +80,7 @@ class PullRequests(BaseScreen):
 
     def on_pr_commits_request(self, _):
         """
-        A function that handles the request for PR commits. Retrieves the PR index from the selection, 
+        A function that handles the request for PR commits. Retrieves the PR index from the selection,
         extracts the PR ID, and pushes the Commits screen to display commits related to the selected PR.
         """
         pr_index: int = self.pr_list.GetSelection()
@@ -96,7 +96,7 @@ class PullRequests(BaseScreen):
 
     def on_pr_deleted(self, _):
         """
-        A callback function to handle pull request deletion. 
+        A callback function to handle pull request deletion.
         """
         pr_index: int = self.pr_list.GetSelection()
         pr_id = self.prs[pr_index]["id"]
@@ -108,13 +108,13 @@ class PullRequests(BaseScreen):
 
     def on_pr_diff(self, _):
         """
-        A function that handles the PR diff request by retrieving the selected PR, fetching the diff, and displaying it. 
+        A function that handles the PR diff request by retrieving the selected PR, fetching the diff, and displaying it.
         """
         pr_index: int = self.pr_list.GetSelection()
         pr = self.prs[pr_index]
 
         def on_finished(diff: bytes):
-            self.GetParent().push_screen(lambda: Diff(self.GetParent(), diff.decode()))
+            self.GetParent().push_screen(lambda: Diff(self.GetParent(), diff))
 
         gui_request_file(
             self, pack_pull_request_diff(pr["id"], self.connection_token), on_finished
@@ -122,7 +122,7 @@ class PullRequests(BaseScreen):
 
     def on_pr_edit(self, _):
         """
-        A function to handle the event of editing a pull request. 
+        A function to handle the event of editing a pull request.
         It retrieves the selected pull request from the list, and then it pushes a PullRequestEditor screen.
         """
         pr_index: int = self.pr_list.GetSelection()
@@ -136,8 +136,9 @@ class PullRequests(BaseScreen):
 
     def request_prs(self):
         """
-        A function that requests pull requests and updates the PR list. 
+        A function that requests pull requests and updates the PR list.
         """
+
         def on_finished(result: Json):
             pull_requests = cast(List[PullRequest], result["pullRequests"])
             self.prs = pull_requests
