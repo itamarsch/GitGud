@@ -28,12 +28,13 @@ class Diff(BaseScreen):
         )
         font = wx.Font(
             14,
-            wx.FONTFAMILY_DEFAULT,
+            wx.FONTFAMILY_TELETYPE,
             wx.FONTSTYLE_NORMAL,
             wx.FONTWEIGHT_NORMAL,
-            faceName="Monospace",
         )
         self.diff_richtextctrl.SetFont(font)
+
+        self.diff_richtextctrl.SetBackgroundColour(wx.Colour("#1d2021"))
 
         if diff:
             self.write_and_color_diff(diff)
@@ -102,7 +103,9 @@ class Diff(BaseScreen):
             for i, hunk in enumerate(hunks):
 
                 if i != 0:
+                    self.diff_richtextctrl.BeginTextColour(wx.WHITE)
                     self.diff_richtextctrl.WriteText(f"{sep}\n\n")
+                    self.diff_richtextctrl.EndTextColour()
                 self.add_hunk(hunk)
 
 
