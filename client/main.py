@@ -21,9 +21,6 @@ class MainFrame(wx.Frame):
         self.client_com = client_com
 
         self.screens: List[BaseScreen] = []
-        self.SetPalette(wx.NullPalette)
-        self.SetBackgroundColour('#1E1E1E')
-        self.SetForegroundColour('#FFFFFF')
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.SetSizer(self.sizer)
@@ -42,8 +39,8 @@ class MainFrame(wx.Frame):
 
     def push_screen(self, screen_fn: Callable[[], BaseScreen]):
         """
-        Pushes a new screen onto the screen stack and sets it as the active screen. 
-        Hides the previous screen if there is one. 
+        Pushes a new screen onto the screen stack and sets it as the active screen.
+        Hides the previous screen if there is one.
         Parameters:
             screen_fn: A Callable that returns a BaseScreen, representing the function to generate the new screen.
         Returns:
@@ -63,7 +60,7 @@ class MainFrame(wx.Frame):
 
     def pop_screen(self):
         """
-        Pops the top screen, hides it, and then shows the new top screen. 
+        Pops the top screen, hides it, and then shows the new top screen.
         """
         self.screens[-1].Hide()
         self.screens.pop()
