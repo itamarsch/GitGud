@@ -3,6 +3,7 @@ import wx
 from typing import cast
 from base_screen import BaseScreen
 from gui.repo_screen import RepoScreen
+from gui.ssh_help import SSHHelp
 from main import MainFrame
 from token_file import save_token_file
 import hash_password
@@ -31,6 +32,14 @@ class RegisterPanel(BaseScreen):
         # SSH Key
         sshkey_label = wx.StaticText(self, label="SSH Key:")
         self.sshkey_text = wx.TextCtrl(self, style=wx.TE_MULTILINE)
+
+        ssh_help_button = wx.Button(self, label="SSH Help")
+        ssh_help_button.Bind(wx.EVT_BUTTON, self.on_ssh_help)
+
+        sshkey_sizer = wx.BoxSizer(wx.HORIZONTAL)
+
+        sshkey_sizer.Add(sshkey_label, 0, wx.ALIGN_CENTER_VERTICAL)
+        sshkey_sizer.Add(ssh_help_button, 0)
         num_lines = 5
         font: wx.Font = cast(wx.Font, self.sshkey_text.GetFont())
         font_height: int = cast(wx.Size, font.GetPixelSize()).height
@@ -52,17 +61,22 @@ class RegisterPanel(BaseScreen):
         main_sizer.Add(self.password_text, 0, wx.CENTER | wx.EXPAND)
 
         main_sizer.AddSpacer(5)
-        main_sizer.Add(sshkey_label, 0, wx.CENTER | wx.EXPAND)
+
+        main_sizer.Add(sshkey_sizer, 0, wx.CENTER | wx.EXPAND)
         main_sizer.Add(self.sshkey_text, 0, wx.CENTER | wx.EXPAND)
+
         main_sizer.AddSpacer(5)
         main_sizer.Add(register_button, 0, wx.CENTER | wx.EXPAND)
         main_sizer.AddSpacer(5)
         main_sizer.Add(login_button, 0, wx.CENTER | wx.EXPAND)
 
+    def on_ssh_help(self, _):
+        self.GetParent().push_screen(lambda: SSHHelp(self.GetParent()))
+
     def on_register(self, _):
         """
-        A callback function to handle the registration process. Retrieves user input, sends a registration request, 
-        and processes the result to obtain a connection token for further interaction with the application.        
+        A callback function to handle the registration process. Retrieves user input, sends a registration request,
+        and processes the result to obtain a connection token for further interaction with the application.
         """
         username = self.username_text.GetValue()
         password = hash_password.hash(self.password_text.GetValue())
