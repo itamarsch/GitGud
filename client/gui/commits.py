@@ -5,7 +5,8 @@ from typing import Callable, List, cast
 from base_screen import BaseScreen
 from gui.diff import Diff
 from gitgud_types import Json
-from gui_run_request import gui_request_file, gui_run_request
+from gui_run_request import gui_request_file
+import json
 
 from client_protocol import Commit, pack_diff
 from main import MainFrame
@@ -82,13 +83,14 @@ class Commits(BaseScreen):
         )
 
     def request_commits(self):
-        def on_finished(result: Json):
-            commits = cast(List[Commit], result["commits"])
+        def on_finished(result: bytes):
+
+            commits = cast(List[Commit], json.loads(result)["commits"])
             self.commits = commits
             self.commits_list.Clear()
             self.commits_list.Append(commits_as_str(commits))
 
-        gui_run_request(
+        gui_request_file(
             self,
             self.pack_request(self.page),
             on_finished,
