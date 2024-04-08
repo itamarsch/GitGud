@@ -450,7 +450,11 @@ class ServerLogic:
                 )
             )
 
-            return pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
+            commits = pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
+            token = token_urlsafe(32)
+            file_com = FileComm(json.dumps(commits).encode(), token)
+            port = file_com.get_port()
+            return pack_view_file(port, token)
 
     def diff(self, request: Json) -> Json:
         """
