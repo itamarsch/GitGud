@@ -55,7 +55,8 @@ repo {user}/{repo_name}
 """
             )
             if public:
-                conf_file.write("""    RW+     =   @all""")
+                conf_file.write("""    - main  =   @all\n""")
+                conf_file.write("""    RW+     =   @all\n""")
         self._commit_files(
             f"Add new {'public' if public else 'private'} repo {repo_name} for user {user}",
             [conf_file_path],
