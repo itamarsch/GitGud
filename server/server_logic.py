@@ -32,7 +32,7 @@ from server_protocol import (
     pack_view_pull_requests,
     unpack,
 )
-from git import GitCommandError, Repo, Commit as GitCommit
+from git import BadName, GitCommandError, Repo, Commit as GitCommit
 from server_comm import FileComm, ServerComm
 from gitgud_types import Action, IssuePr, Json, Address, commit_page_size
 from secrets import token_urlsafe
@@ -475,8 +475,7 @@ class ServerLogic:
             hash = request["hash"]
             try:
                 commit = r.commit(hash)
-                parent = commit.parents[0]
-            except Exception:
+            except BadName:
                 return pack_error("Invalid commit hash")
 
             token = token_urlsafe(32)

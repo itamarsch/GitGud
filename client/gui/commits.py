@@ -100,6 +100,6 @@ class Commits(BaseScreen):
 def commits_as_str(commits: List[Commit]) -> List[str]:
     new_line = "\n"
     commit_to_str: Callable[[Commit], str] = (
-        lambda commit: f"{commit['authour']}: {commit['message'].replace(new_line, '.')} {new_line}{commit['date']} {commit['hash'][0:6]}"
+        lambda commit: f"{commit['authour']}: {commit['message'].replace(new_line, '.')} {new_line}{commit['date']} {commit['hash'][0:8]}"
     )
     return list(map(commit_to_str, commits))
