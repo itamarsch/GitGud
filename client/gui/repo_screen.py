@@ -100,7 +100,7 @@ class RepoScreen(BaseScreen):
     def on_text_changed(self, event):
         """
         Handle the text changed event, perform a search for repository suggestions based on the entered query and display them.
-        
+
         """
         query = event.GetEventObject().GetValue()
         if query:
@@ -148,8 +148,8 @@ class RepoScreen(BaseScreen):
 
     def on_branch_selected(self, _):
         """
-        This function handles the event when a branch is selected. 
-        It gets the selected branch from the list and updates the 'branch' and 'directory' attributes accordingly. 
+        This function handles the event when a branch is selected.
+        It gets the selected branch from the list and updates the 'branch' and 'directory' attributes accordingly.
         It then calls 'request_directory_structure' to update the directory structure based on the new branch.
         """
         selection = self.branches_list.GetSelection()
@@ -163,7 +163,7 @@ class RepoScreen(BaseScreen):
 
     def on_commits_screen_button(self, _):
         """
-        A function that handles button clicks on the commits screen. 
+        A function that handles button clicks on the commits screen.
         Checks if repository and branch are filled, shows a message box if not, then pushes the commits screen using the parent's connection token and repo information.
         """
         if not self.repo or not self.branch:
@@ -195,9 +195,9 @@ class RepoScreen(BaseScreen):
 
     def on_pr_screen_button(self, _):
         """
-        A function that handles the button click event on the pull request screen. 
-        It checks if the repository is filled, displays a message box if it's empty, 
-        and then pushes a new screen for pull requests 
+        A function that handles the button click event on the pull request screen.
+        It checks if the repository is filled, displays a message box if it's empty,
+        and then pushes a new screen for pull requests
         """
         if not self.repo:
             wx.MessageBox("Please fill in fields")
@@ -212,11 +212,11 @@ class RepoScreen(BaseScreen):
         A function that copies the repository URL to the clipboard if a repository is set.
         """
         if self.repo:
-            pyperclip.copy(f"git@itamarfedora:{self.repo}.git")
+            pyperclip.copy(f"git@fedora:{self.repo}.git")
 
     def on_file_selected(self, _):
         """
-        A function that handles the event when a file is selected. 
+        A function that handles the event when a file is selected.
         It retrieves the selected file, checks if it's a directory, and based on that either updates the current directory and requests the directory structure or requests the selected file.
         """
         selection = self.directory_list.GetSelection()
@@ -229,24 +229,22 @@ class RepoScreen(BaseScreen):
             else:
                 self.request_file(file_name)
 
-
-    def request_file(self, file_name:str):
+    def request_file(self, file_name: str):
         """
         Requests a file with the given file name and displays its content in the GUI.
-        
+
         Parameters:
             file_name (str): The name of the file to request.
-        
+
         Returns:
             None
         """
+
         def on_finished(result: bytes):
             try:
                 file_content_str = result.decode()
                 self.GetParent().push_screen(
-                    lambda: FileContent(
-                        self.GetParent(), file_content_str, file_name
-                    )
+                    lambda: FileContent(self.GetParent(), file_content_str, file_name)
                 )
             except (UnicodeDecodeError, AttributeError):
                 wx.MessageBox("File not string :(")
@@ -262,17 +260,17 @@ class RepoScreen(BaseScreen):
             on_finished,
         )
 
-
     def request_directory_structure(self):
         """
         Request the directory structure and update the directory list in the GUI.
 
         Parameters:
             self: The instance of the class.
-        
+
         Returns:
             None
         """
+
         def on_finished(result: Json):
             self.directory_list.Clear()
             if not is_base_directory(self.directory):
@@ -295,10 +293,10 @@ class RepoScreen(BaseScreen):
 def is_base_directory(path: str) -> bool:
     """
     A function to check if the given path represents a base directory.
-    
+
     Parameters:
     path (str): The path to be checked.
-    
+
     Returns:
     bool: True if the path represents a base directory, False otherwise.
     """
