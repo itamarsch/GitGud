@@ -4,3 +4,4 @@ python-dotenv
 pygments
 cryptography
 pyperclip
+typing-extensions

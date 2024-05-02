@@ -3,3 +3,5 @@ psycopg2
 fuzzywuzzy
 python-Levenshtein
 unidiff
+python-dotenv
+compress
