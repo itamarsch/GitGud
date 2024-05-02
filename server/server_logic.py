@@ -294,11 +294,7 @@ class ServerLogic:
             return pack_error("Path out of repository")
 
         # Safe to clone, repo exists in database
-        with RepoClone(full_repo_name) as r:
-            try:
-                r.git.checkout(branch)
-            except GitCommandError:
-                return pack_error("Invalid branch name")
+        with RepoClone(full_repo_name, branch=branch):
 
             try:
                 with open(path, "rb") as f:
@@ -331,11 +327,7 @@ class ServerLogic:
             return pack_error("Path out of repository")
 
         # Safe to clone, repo exists in database
-        with RepoClone(full_repo_name) as r:
-            try:
-                r.git.checkout(branch)
-            except GitCommandError:
-                return pack_error("Invalid branch name")
+        with RepoClone(full_repo_name, branch=branch):
 
             if not os.path.isdir(path):
                 return pack_error("Directory doesn't exist")
