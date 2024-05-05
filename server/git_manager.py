@@ -52,11 +52,11 @@ class GitManager:
                 f"""
 repo {user}/{repo_name}
     RW+     =   {user}
+    RW+     =   @admin
 """
             )
             if public:
-                conf_file.write("""    - main  =   @all\n""")
-                conf_file.write("""    RW+     =   @all\n""")
+                conf_file.write("""    - main  =   @all\n    RW+     =   @all\n""")
         self._commit_files(
             f"Add new {'public' if public else 'private'} repo {repo_name} for user {user}",
             [conf_file_path],
