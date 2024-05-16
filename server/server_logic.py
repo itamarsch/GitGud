@@ -5,8 +5,8 @@ from gitdb.util import os
 from database import DB
 from git_manager import GitManager
 from queue import Queue
-from diff import commits_between_branches, get_diff_string, triple_dot_diff
-from repo_clone import RepoClone
+from git_utils import commits_between_branches, get_diff_json
+from repo_clone import repo_clone
 from server_protocol import (
     pack_branches,
     pack_commit,
@@ -26,13 +26,13 @@ from server_protocol import (
     pack_search_repo,
     pack_update_issue,
     pack_update_pr,
-    pack_validate_password,
+    pack_validate_token,
     pack_view_file,
     pack_view_issues,
     pack_view_pull_requests,
     unpack,
 )
-from git import BadName, GitCommandError, Repo, Commit as GitCommit
+from git import BadName, Repo, Commit as GitCommit
 from server_comm import FileComm, ServerComm
 from gitgud_types import Action, IssuePr, Json, Address, commit_page_size
 from secrets import token_urlsafe
@@ -72,7 +72,7 @@ class ServerLogic:
 
     def apply_action(self, json: Json) -> Json:
         """
-        A function to apply a given action to a JSON input assuming the keys are validated and return the result as JSON.
+        A function to apply a given action to a JSON input according to the type assuming the keys are validated and return the result as JSON.
         Parameters:
             self: the instance of the class
             json: the JSON input
@@ -96,6 +96,9 @@ class ServerLogic:
         return action(json)
 
     def get_actions(self) -> Dict[str, Tuple[Action, List[str]]]:
+        """
+        Returns all actions as a dictionary from the type to the function and the required keys
+        """
         return {
             "register": (self.register, ["username", "password", "sshKey"]),
             "login": (self.login, ["username", "password"]),
@@ -266,8 +269,8 @@ class ServerLogic:
             return result
 
         # Safe to clone, repo exists in database
-        with RepoClone(full_repo_name) as r:
-            branches = branches_of_repo(r)
+        r = repo_clone(full_repo_name)
+        branches = branches_of_repo(r)
         return pack_branches(branches)
 
     def view_file(self, request: Json) -> Json:
@@ -294,14 +297,13 @@ class ServerLogic:
             return pack_error("Path out of repository")
 
         # Safe to clone, repo exists in database
-        with RepoClone(full_repo_name, branch=branch):
-
-            try:
-                with open(path, "rb") as f:
-                    file_com = FileComm(f.read(), token)
-                    return pack_view_file(file_com.get_port(), token)
-            except FileNotFoundError:
-                return pack_error("File doesn't exist")
+        repo_clone(full_repo_name, branch=branch)
+        try:
+            with open(path, "rb") as f:
+                file_com = FileComm(f.read(), token)
+                return pack_view_file(file_com.get_port(), token)
+        except FileNotFoundError:
+            return pack_error("File doesn't exist")
 
     def project_directory(self, request: Json) -> Json:
         """
@@ -327,22 +329,22 @@ class ServerLogic:
             return pack_error("Path out of repository")
 
         # Safe to clone, repo exists in database
-        with RepoClone(full_repo_name, branch=branch):
+        repo_clone(full_repo_name, branch=branch)
 
-            if not os.path.isdir(path):
-                return pack_error("Directory doesn't exist")
+        if not os.path.isdir(path):
+            return pack_error("Directory doesn't exist")
 
-            try:
-                (_, dirs, files) = next(os.walk(path))
-                if ".git" in dirs:
-                    dirs.remove(".git")
+        try:
+            (_, dirs, files) = next(os.walk(path))
+            if ".git" in dirs:
+                dirs.remove(".git")
 
-                dirs = map(lambda dir: f"{dir}/", dirs)
+            dirs = map(lambda dir: f"{dir}/", dirs)
 
-                return pack_project_dirs([*dirs, *files])
+            return pack_project_dirs([*dirs, *files])
 
-            except FileNotFoundError:
-                return pack_error("File doesn't exist")
+        except FileNotFoundError:
+            return pack_error("File doesn't exist")
 
     @staticmethod
     def pack_git_commits(commits: List[GitCommit]) -> List[Json]:
@@ -385,20 +387,20 @@ class ServerLogic:
         page = int(request["page"])
 
         # Safe to clone, repo exists in database
-        with RepoClone(full_repo_name) as r:
-            fifty_first_commits = list(
-                r.iter_commits(
-                    f"origin/{branch}",
-                    skip=page * commit_page_size,
-                    max_count=commit_page_size,
-                )
+        r = repo_clone(full_repo_name)
+        fifty_first_commits = list(
+            r.iter_commits(
+                f"origin/{branch}",
+                skip=page * commit_page_size,
+                max_count=commit_page_size,
             )
+        )
 
-            commits = pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
-            token = token_urlsafe(32)
-            file_com = FileComm(json.dumps(commits).encode(), token)
-            port = file_com.get_port()
-            return pack_view_file(port, token)
+        commits = pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
+        token = token_urlsafe(32)
+        file_com = FileComm(json.dumps(commits).encode(), token)
+        port = file_com.get_port()
+        return pack_view_file(port, token)
 
     def pr_commits(self, request: Json) -> Json:
         """
@@ -429,24 +431,22 @@ class ServerLogic:
         page = int(request["page"])
 
         # Safe to clone, repo exists in database
-        with RepoClone(full_repo_name) as r:
-            error = self.validate_pr_branches(
-                r, request["id"], into_branch, from_branch
-            )
-            if error is not None:
-                return error
+        r = repo_clone(full_repo_name)
+        error = self.validate_pr_branches(r, request["id"], into_branch, from_branch)
+        if error is not None:
+            return error
 
-            fifty_first_commits = list(
-                commits_between_branches(
-                    r, f"origin/{from_branch}", f"origin/{into_branch}", page
-                )
+        fifty_first_commits = list(
+            commits_between_branches(
+                r, f"origin/{from_branch}", f"origin/{into_branch}", page
             )
+        )
 
-            commits = pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
-            token = token_urlsafe(32)
-            file_com = FileComm(json.dumps(commits).encode(), token)
-            port = file_com.get_port()
-            return pack_view_file(port, token)
+        commits = pack_commits(ServerLogic.pack_git_commits(fifty_first_commits))
+        token = token_urlsafe(32)
+        file_com = FileComm(json.dumps(commits).encode(), token)
+        port = file_com.get_port()
+        return pack_view_file(port, token)
 
     def diff(self, request: Json) -> Json:
         """
@@ -463,17 +463,17 @@ class ServerLogic:
         if isinstance(result, dict):
             return result
 
-        with RepoClone(full_repo_name) as r:
-            hash = request["hash"]
-            try:
-                commit = r.commit(hash)
-            except BadName:
-                return pack_error("Invalid commit hash")
+        r = repo_clone(full_repo_name)
+        hash = request["hash"]
+        try:
+            commit = r.commit(hash)
+        except BadName:
+            return pack_error("Invalid commit hash")
 
-            token = token_urlsafe(32)
-            diff: str = commit.repo.git.show(commit.hexsha)
+        token = token_urlsafe(32)
+        diff: str = commit.repo.git.show(commit.hexsha)
 
-            file_com = FileComm(json.dumps(get_diff_string(diff)).encode(), token)
+        file_com = FileComm(json.dumps(get_diff_json(diff)).encode(), token)
         return pack_diff(file_com.get_port(), token)
 
     def create_issue(self, request: Json) -> Json:
@@ -531,7 +531,7 @@ class ServerLogic:
         self, id: int, connection_token: str, issue: IssuePr
     ) -> Optional[Json]:
         """
-        Validate the given issue or PR with the provided ID, connection token, and issue or PR object.
+        Validate the given issue or PR with the provided ID, connection token, and issue or PR enum.
 
         Parameters:
             id (int): The ID of the issue or PR to validate.
@@ -617,10 +617,10 @@ class ServerLogic:
         from_branch = request["fromBranch"]
         into_branch = request["intoBranch"]
         repo_id = error_or_repo[0]
-        with RepoClone(request["repo"]) as repo:
-            branches = branches_of_repo(repo)
-            if not (from_branch in branches and into_branch in branches):
-                return pack_error("Invalid branch names")
+        repo = repo_clone(request["repo"])
+        branches = branches_of_repo(repo)
+        if not (from_branch in branches and into_branch in branches):
+            return pack_error("Invalid branch names")
 
         self.db.create_pr(
             request["title"],
@@ -651,13 +651,13 @@ class ServerLogic:
 
         pull_requests = self.db.pull_requests(repo_id)
 
-        with RepoClone(request["repo"]) as repo:
-            branches = branches_of_repo(repo)
-            for i, pr in enumerate(pull_requests):
-                (id, _, _, from_branch, into_branch, _) = pr
-                if from_branch not in branches or into_branch not in branches:
-                    pull_requests.pop(i)
-                    self.db.delete_pr(id)
+        repo = repo_clone(request["repo"])
+        branches = branches_of_repo(repo)
+        for i, pr in enumerate(pull_requests):
+            (id, _, _, from_branch, into_branch, _) = pr
+            if from_branch not in branches or into_branch not in branches:
+                pull_requests.pop(i)
+                self.db.delete_pr(id)
 
         return pack_view_pull_requests(
             [
@@ -710,12 +710,10 @@ class ServerLogic:
         )
         full_repo = f"{owner}/{repo_name}"
 
-        with RepoClone(full_repo) as repo:
-            error = self.validate_pr_branches(
-                repo, request["id"], into_branch, from_branch
-            )
-            if error is not None:
-                return error
+        repo = repo_clone(full_repo)
+        error = self.validate_pr_branches(repo, request["id"], into_branch, from_branch)
+        if error is not None:
+            return error
         self.db.update_pr(id, title, from_branch, into_branch)
         return pack_update_pr()
 
@@ -723,7 +721,7 @@ class ServerLogic:
         self, repo: Repo, id: int, into_branch: str, from_branch: str
     ) -> Optional[Json]:
         """
-        Validate the branches of a pull request.
+        Validate the branches of a pull request. and deletes if invalid
 
         Parameters:
             repo (Repo): The repository object.
@@ -768,24 +766,22 @@ class ServerLogic:
         if into_branch.startswith("origin/") or from_branch.startswith("origin/"):
             return pack_error("Use only branch name no need for remote")
 
-        with RepoClone(f"{owner}/{repo_name}") as r:
-            error = self.validate_pr_branches(
-                r, request["id"], into_branch, from_branch
-            )
+        r = repo_clone(f"{owner}/{repo_name}")
+        error = self.validate_pr_branches(r, request["id"], into_branch, from_branch)
 
-            if error is not None:
-                return error
+        if error is not None:
+            return error
 
-            into_branch = f"origin/{into_branch}"
-            from_branch = f"origin/{from_branch}"
-            diff = triple_dot_diff(r, into_branch, from_branch)
-            if not diff:
-                return pack_error("No common base")
+        into_branch = f"origin/{into_branch}"
+        from_branch = f"origin/{from_branch}"
+        diff = r.git.diff(f"{into_branch}...{from_branch}")
+        if not diff:
+            return pack_error("No common base")
 
-            token = token_urlsafe(32)
-            full_diff = get_diff_string(diff)
+        token = token_urlsafe(32)
+        full_diff = get_diff_json(diff)
 
-            file_com = FileComm(json.dumps(full_diff).encode(), token)
+        file_com = FileComm(json.dumps(full_diff).encode(), token)
         return pack_diff(file_com.get_port(), token)
 
     def validate_connection(self, request: Json) -> Json:
@@ -798,7 +794,7 @@ class ServerLogic:
         Returns:
             Json: The result of the validation process.
         """
-        return pack_validate_password(
+        return pack_validate_token(
             request["tokenForValidation"] in self.connected_client
         )
 

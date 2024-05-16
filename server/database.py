@@ -7,8 +7,8 @@ from typing import List, Tuple, Optional, cast
 class DB:
     def __init__(self) -> None:
         self.conn = psycopg2.connect(
-            dbname="gitgud",
-            user="postgres",
+            dbname=os.getenv("DB_NAME"),
+            user=os.getenv("DB_USER"),
             host=os.getenv("DB_IP"),
             port=5432,
             password=os.getenv("DB_PASSWORD"),
@@ -23,7 +23,7 @@ class DB:
             repo (str): The name of the repository in the format 'username/repo_name'.
 
         Returns:
-            Optional[Tuple[int, str, bool]]: A tuple containing the repository's id, name, and public status if found, 
+            Optional[Tuple[int, str, bool]]: A tuple containing the repository's id, name, and public status if found,
                                               or None if the repository is not found.
         """
         [user, repo] = repo.split("/")
@@ -152,7 +152,7 @@ where repo_id = %s""",
 
         Parameters:
             issue_id (int): The unique identifier of the issue to be deleted.
-        
+
         Returns:
             None
         """
@@ -213,7 +213,7 @@ where repo_id = %s""",
 
         Parameters:
             pr_id (int): The ID of the pull request to be deleted.
-        
+
         Returns:
             None
         """
@@ -223,7 +223,7 @@ where repo_id = %s""",
     def update_pr(self, id: int, title: str, from_branch: str, into_branch: str):
         """
         Updates a Pull Request record in the database with the provided title, from_branch, and into_branch for a given id.
-        
+
         Parameters:
             id (int): The unique identifier of the Pull Request record.
             title (str): The new title for the Pull Request.
@@ -257,7 +257,6 @@ where repo_id = %s
         )
         return cast(List[Tuple[int, str, str, str, str, bool]], self.cursor.fetchall())
 
-
     def user_exists(self, username: str) -> bool:
         """
         Check if a user exists in the database.
@@ -275,11 +274,11 @@ where repo_id = %s
     def validate_user(self, username: str, password_hash: str) -> bool:
         """
         Validates the user by checking if the provided password hash matches the one stored in the database for the given username.
-        
+
         Parameters:
             username (str): The username of the user to validate.
             password_hash (str): The hashed password to validate.
-        
+
         Returns:
             bool: True if the password hash matches the one in the database, False otherwise.
         """
@@ -296,7 +295,7 @@ where repo_id = %s
 
     def all_repos(self) -> List[Tuple[int, str, str]]:
         """
-        Retrieve all repositories from the database, including the repository id, owner's username, and repository name.
+        Retrieve all public repositories from the database, including the repository id, owner's username, and repository name.
         """
 
         self.cursor.execute(
@@ -316,10 +315,10 @@ where "Repository".public
     def repo_and_repo_owner_of_issue(self, issue_id: int) -> Optional[Tuple[str, str]]:
         """
         A function to retrieve the repository and repository owner of a given issue.
-        
+
         Parameters:
             issue_id (int): The ID of the issue.
-            
+
         Returns:
             Optional[Tuple[str, str]]: A tuple containing the repository owner's username and the repository name, or None if no such issue is found.
         """

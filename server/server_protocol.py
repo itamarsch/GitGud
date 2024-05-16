@@ -112,7 +112,7 @@ def pack_update_pr() -> Json:
     return {}
 
 
-def pack_validate_password(valid: bool) -> Json:
+def pack_validate_token(valid: bool) -> Json:
     return {"valid": valid}
 
 

@@ -29,11 +29,11 @@ def compress_bytes(data: bytes) -> bytes:
 def recv(soc: socket.socket, length_size: int) -> bytes:
     """
     A function that receives data from a socket based on the length provided and returns the received data.
-    
+
     Parameters:
     - soc: A socket.socket object representing the socket to receive data from.
     - length_size: An integer indicating the length of the data to receive.
-    
+
     Returns:
     - bytes: The data received from the socket.
     """
@@ -68,17 +68,20 @@ class FileComm:
         thread.start()
 
     def get_port(self) -> int:
+        """
+        Returns port of file communication that was selected randomly by os
+        """
         while not self.running:
             pass
         return self.soc.getsockname()[1]
 
     def _listen(self):
         """
-        Listen for incoming connections, 
-        establish encryption, 
-        receive file request, 
-        validate file request, 
-        send file, 
+        Listen for incoming connections,
+        establish encryption,
+        receive file request,
+        validate file request,
+        send file,
         then close the connection.
         """
         self.soc = socket.socket()
@@ -116,6 +119,12 @@ class ServerComm:
         self.running = False
 
     def _get_addr_of_socket(self, soc: socket.socket) -> Optional[Address]:
+        """
+        Get the address of socket if it is part of the open_clients
+
+        Parameters:
+            soc (socket.socket): Socket to get address of
+        """
         for k, v in self.open_sockets.items():
             if v[0] is soc:
                 return k
@@ -124,7 +133,7 @@ class ServerComm:
     def _listen(self, port: int):
         """
         Listens on a specified port for incoming connections and reads data from the sockets.
-        
+
         Parameters:
             port (int): The port number to listen on.
         """
@@ -147,10 +156,10 @@ class ServerComm:
     def _read_sockets(self, rlist: List[socket.socket]):
         """
         Read sockets and handle new client connections or received messages.
-        
+
         Parameters:
             rlist (List[socket.socket]): List of socket objects to read from.
-        
+
         Returns:
             None
         """
@@ -212,7 +221,7 @@ class ServerComm:
     def _on_receive_encryption(self, soc: socket.socket, addr: Address):
         """
         A function to handle receiving encryption responses from a socket.
-        
+
         Parameters:
             soc (socket.socket): The socket object for communication.
             addr (Address): The address of the connection.

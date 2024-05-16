@@ -53,7 +53,7 @@ class EncryptionState:
         """
         return self.encryption_key is not None
 
-    def get_mixed_key(self):
+    def get_mixed_key(self) -> int:
         """
         Get public A from private a
         """

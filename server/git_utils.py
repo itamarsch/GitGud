@@ -42,50 +42,30 @@ def commits_between_branches(
     return commits
 
 
-def triple_dot_diff(repo: Repo, into_branch: str, from_branch: str):
+def get_diff_json(git_diff_output: str) -> Json:
     """
-    Calculate the difference between two branches in the given repository.
+    Creates a json object from the output of git diff,
+    List of files, each file has a type and according to the type has the fields:
+    Add: file_added
+    Remove: file_removed
+    Rename: file_added
+    Modified: file_modified
+
+    Each file contains a list of hunks
+    Each hunk contains a list of lines
+    Each line contains: value, type: (Add, Remove, Context), target_line_no, source_line_no
+
 
     Parameters:
-        repo (Repo): The repository object.
-        into_branch (str): The name of the branch into which changes are merged.
-        from_branch (str): The name of the branch from which changes are merged.
+        git_diff_output (str) The output of a git diff command
 
     Returns:
-        diff: The difference between the two branches.
+        Json: a json representing a diff
     """
-    # base_commit = cast(List[Commit], repo.merge_base(into_branch, from_branch))
-    #
-    # if not base_commit:
-    #     return None
-    #
-    # diff = base_commit[0].diff(from_branch)
-    return repo.git.diff(f"{into_branch}...{from_branch}")
 
-
-def make_diff_str(add: bool, diff: str) -> str:
-    """
-    A function that generates a diff string with added or removed markers for each line.
-
-    Parameters:
-    - add (bool): A flag indicating whether to add or remove lines.
-    - diff (str): The string containing the lines to be marked.
-
-    Returns:
-    - str: The formatted string with markers for added or removed lines.
-    """
-    add_remove_str = "++" if add else "--"
-    return "\n".join([f"{add_remove_str}{line}" for line in diff.splitlines()])
-
-
-def get_diff_string(diff: str) -> Json:
-
-    # List of files
-    # Each file contains a modification type and a list of hunks
-    # Each hunk contains a list of lines
     formatted_diff = []
 
-    patch_set = unidiff.PatchSet(diff.splitlines())
+    patch_set = unidiff.PatchSet(git_diff_output.splitlines())
 
     for file in patch_set:
         file = cast(unidiff.PatchedFile, file)
@@ -113,15 +93,20 @@ def get_diff_string(diff: str) -> Json:
 
             for line in hunk:
                 line = cast(unidiff.patch.Line, line)
+                json_line: Json = {}
 
                 if line.is_added:
-                    hunk_lines.append({"type": "Add", "value": line.value})
+                    json_line = {"type": "Add", "value": line.value}
                 elif line.is_removed:
-                    hunk_lines.append({"type": "Remove", "value": line.value})
+                    json_line = {"type": "Remove", "value": line.value}
                 else:
-                    hunk_lines.append({"type": "Context", "value": line.value})
-                hunk_lines[-1]["target_line_no"] = line.target_line_no
-                hunk_lines[-1]["source_line_no"] = line.source_line_no
+                    json_line = {"type": "Context", "value": line.value}
+
+                json_line["target_line_no"] = line.target_line_no
+                json_line["source_line_no"] = line.source_line_no
+
+                hunk_lines.append(json_line)
+
             file_json["hunks"].append({"lines": hunk_lines})
 
         formatted_diff.append(file_json)
