@@ -4,15 +4,13 @@ from gitgud_types import Json
 from threading import Thread
 import wx
 
-from main import MainFrame
-
 
 def gui_request_file(
     panel: BaseScreen, request: Json, on_finished: Callable[[bytes], None]
 ):
     """
     A function that sends a file request to the GUI, runs the request, and calls the on_finished callback with the file content.
-    
+
     Parameters:
         panel (BaseScreen): The panel to send the request.
         request (Json): The request to send.

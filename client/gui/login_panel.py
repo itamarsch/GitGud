@@ -5,7 +5,7 @@ from base_screen import BaseScreen
 from gui.repo_screen import RepoScreen
 from gui_run_request import gui_run_request
 import hash_password
-from main import MainFrame
+from main_frame import MainFrame
 from token_file import save_token_file
 from client_protocol import pack_login
 from gitgud_types import Json
@@ -54,10 +54,10 @@ class LoginPanel(BaseScreen):
 
     def on_login(self, _):
         """
-        A callback function called when the login button is pressed. 
-        It extracts the username and hashed password from the UI elements. 
-        Makes a GUI request with the login data 
-        Defines an inner function to handle the response and save the token to a file. 
+        A callback function called when the login button is pressed.
+        It extracts the username and hashed password from the UI elements.
+        Makes a GUI request with the login data
+        Defines an inner function to handle the response and save the token to a file.
         """
         username = self.username_text.GetValue()
         password = hash_password.hash(self.password_text.GetValue())
