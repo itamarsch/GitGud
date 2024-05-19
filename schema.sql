@@ -3,7 +3,6 @@
 --
 
 -- Dumped from database version 16.1 (Debian 16.1-1.pgdg120+1)
---
 -- Dumped by pg_dump version 16.1
 
 SET statement_timeout = 0;
