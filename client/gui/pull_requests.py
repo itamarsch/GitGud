@@ -21,6 +21,18 @@ from main import MainFrame
 
 class PullRequests(BaseScreen):
     def __init__(self, parent: MainFrame, repo: str, connection_token: str):
+        """
+        Initializes a new instance of the PullRequests class.
+
+        Args:
+            parent (MainFrame): The parent frame of the PullRequests.
+            repo (str): The repository name.
+            connection_token (str): The connection token for the PullRequests.
+
+        Initializes the PullRequests with the given parent frame, repository name, and connection token.
+        Sets the prs attribute to an empty list.
+        Calls the parent class's __init__ method with the provided parameters.
+        """
         self.repo = repo
         self.connection_token = connection_token
 
@@ -53,6 +65,15 @@ class PullRequests(BaseScreen):
         main_sizer.Add(self.pr_list, 15, wx.CENTER | wx.EXPAND)
 
     def on_right_click(self, event):
+        """
+        Handles the right-click event on the list.
+
+        Args:
+            event (wx.MouseEvent): The right-click event.
+
+        Returns:
+            None
+        """
         # Get the index of the item right-clicked
         index = self.pr_list.HitTest(event.GetPosition())
         if index != wx.NOT_FOUND:
@@ -153,6 +174,16 @@ class PullRequests(BaseScreen):
 
 
 def pr_as_str(prs: List[PullRequest]) -> List[str]:
+    """
+    Convert a list of PullRequest objects into a list of strings.
+
+    Args:
+        prs (List[PullRequest]): A list of PullRequest objects.
+
+    Returns:
+        List[str]: A list of strings representing the PullRequest objects. Each string contains the title, username, and branch information of a PullRequest object.
+
+    """
     pr_as_str: Callable[[PullRequest], str] = (
         lambda pr: f"{pr['title']}\n{pr['username']}\n{pr['fromBranch']} -> {pr['intoBranch']}"
     )

@@ -6,6 +6,17 @@ from typing import List, Tuple, Optional, cast
 
 class DB:
     def __init__(self) -> None:
+        """
+        Initializes a new instance of the class.
+
+        This constructor establishes a connection to a PostgreSQL database using the provided environment variables for the database name, username, host, port, and password. It creates a cursor object associated with the connection.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         self.conn = psycopg2.connect(
             dbname=os.getenv("DB_NAME"),
             user=os.getenv("DB_USER"),

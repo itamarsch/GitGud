@@ -10,6 +10,17 @@ global_g = 190619
 
 
 def diffie_helman(num: int, g: int, p: int) -> int:
+    """
+    Calculate the Diffie-Hellman key exchange using the given parameters.
+
+    Parameters:
+        num (int): The private key exponent.
+        g (int): The generator.
+        p (int): The prime modulus.
+
+    Returns:
+        int: The calculated Diffie-Hellman key.
+    """
     return (g**num) % p
 
 
@@ -19,14 +30,44 @@ class EncryptionState:
     """
 
     def __init__(self):
+        """
+        Initializes a new instance of the class.
+
+        This constructor sets the `secret_key` attribute to a random integer between 0 and 1000,
+        the `encryption_key` attribute to `None`, and the `fernet` attribute to `None`.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         self.secret_key: int = random.randint(0, 1000)
         self.encryption_key: Optional[int] = None
         self.fernet = None
 
     def encrypt(self, data: bytes) -> bytes:
+        """
+        Encrypts the given data using the Fernet encryption algorithm.
+
+        Parameters:
+            data (bytes): The data to be encrypted.
+
+        Returns:
+            bytes: The encrypted data.
+        """
         return cast(Fernet, self.fernet).encrypt(data)
 
     def decrypt(self, data: bytes) -> bytes:
+        """
+        Decrypts the given data using the Fernet encryption algorithm.
+
+        Args:
+            data (bytes): The data to be decrypted.
+
+        Returns:
+            bytes: The decrypted data.
+        """
         return cast(Fernet, self.fernet).decrypt(data)
 
     def set_encryption_key(self, client_mixed_key_response_bytes: bytes):

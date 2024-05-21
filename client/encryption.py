@@ -5,6 +5,17 @@ from cryptography.fernet import Fernet
 
 
 def diffie_helman(num: int, g: int, p: int) -> int:
+    """
+    Calculate the Diffie-Hellman key exchange using the given parameters.
+
+    Parameters:
+        num (int): The private key exponent.
+        g (int): The generator.
+        p (int): The prime modulus.
+
+    Returns:
+        int: The calculated Diffie-Hellman key.
+    """
     return (g**num) % p
 
 
@@ -14,6 +25,17 @@ class EncryptionState:
     """
 
     def __init__(self):
+        """
+        Initializes a new instance of the class.
+
+        This constructor sets the `p` attribute to `None`, the `g` attribute to `None`, the `secret_key` attribute to a random integer between 0 and 1000, the `encryption_key` attribute to `None`, and the `fernet` attribute to `None`.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         self.p: Optional[int] = None
         self.g: Optional[int] = None
         self.secret_key = random.randint(0, 1000)
@@ -21,9 +43,27 @@ class EncryptionState:
         self.fernet: Fernet
 
     def encrypt(self, data: bytes) -> bytes:
+        """
+        Encrypts the given data using the Fernet encryption algorithm.
+
+        Parameters:
+            data (bytes): The data to be encrypted.
+
+        Returns:
+            bytes: The encrypted data.
+        """
         return self.fernet.encrypt(data)
 
     def decrypt(self, data: bytes) -> bytes:
+        """
+        Decrypts the given data using the Fernet encryption algorithm.
+
+        Args:
+            data (bytes): The data to be decrypted.
+
+        Returns:
+            bytes: The decrypted data.
+        """
         return self.fernet.decrypt(data)
 
     def set_encryption_key(self, server_mixed_key_bytes: int):
@@ -39,13 +79,19 @@ class EncryptionState:
         self.fernet = Fernet(key)
 
     def parse_initial_message(self, data: str):
+        """
+        Parses the initial message received from the server and sets the necessary attributes for encryption.
+
+        Parameters:
+            data (str): The initial message received from the server.
+
+        Returns:
+            None
+        """
         [mixed_key, p, g] = data.split(";")
         self.p = int(p)
         self.g = int(g)
         self.set_encryption_key(int(mixed_key))
-
-    def finished_encryption(self) -> bool:
-        return self.encryption_key is not None
 
     def get_mixed_key(self):
         """

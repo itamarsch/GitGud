@@ -11,6 +11,18 @@ import json
 
 class Diff(BaseScreen):
     def __init__(self, parent: MainFrame, diff: bytes):
+        """
+        Initializes a new instance of the Diff class.
+
+        Args:
+            parent (MainFrame): The parent frame of the Diff.
+            diff (bytes): The diff data.
+
+        Initializes the Diff with the given parent frame and diff data.
+        Sets the diff attribute to the provided diff data.
+        Calls the parent class's __init__ method with the provided parameters.
+
+        """
 
         self.diff = diff
         super().__init__(parent, 0, 1)
@@ -42,6 +54,22 @@ class Diff(BaseScreen):
         main_sizer.Add(self.diff_richtextctrl, 15, wx.CENTER | wx.EXPAND)
 
     def add_file_header(self, file: Json):
+        """
+        Adds a file header to the diff rich text control based on the file type.
+
+        Args:
+            file (Json): A JSON object representing the file.
+
+        Returns:
+            None
+
+        Raises:
+            None
+
+        Side Effects:
+            - Modifies the text color of the diff rich text control based on the file type.
+            - Writes the file header to the diff rich text control.
+        """
         file_type = file["type"]
         if file_type == "Remove":
             self.diff_richtextctrl.BeginTextColour(wx.RED)
@@ -60,6 +88,19 @@ class Diff(BaseScreen):
         self.diff_richtextctrl.EndTextColour()
 
     def add_hunk(self, hunk: Json):
+        """
+        Adds a hunk to the diff rich text control based on the provided JSON object.
+
+        Parameters:
+            hunk (Json): A JSON object representing the hunk.
+
+        Returns:
+            None
+
+        Side Effects:
+            - Modifies the text color of the diff rich text control based on the line type.
+            - Writes the line numbers and values to the diff rich text control.
+        """
         lines = hunk["lines"]
 
         for line in lines:
@@ -91,6 +132,20 @@ class Diff(BaseScreen):
             self.diff_richtextctrl.EndTextColour()
 
     def write_and_color_diff(self, diff: Json):
+        """
+        Write and color the diff to the diff rich text control.
+
+        Parameters:
+            diff (Json): A JSON object representing the diff.
+
+        Returns:
+            None
+
+        Side Effects:
+            - Clears the diff rich text control.
+            - Writes the diff files to the diff rich text control.
+            - Writes the diff hunks to the diff rich text control.
+        """
         self.diff_richtextctrl.Clear()
         files: List[Json] = diff["diff"]
         for i, file in enumerate(files):

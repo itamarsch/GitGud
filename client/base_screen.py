@@ -15,6 +15,19 @@ class BaseScreen(wx.Panel):
         width: int = 10,
         title: Optional[str] = None,
     ):
+        """
+        Initializes a new instance of the BaseScreen class.
+
+        Args:
+            parent (MainFrame): The parent frame of the base screen.
+            top (int): The size of the top margin.
+            bottom (int): The size of the bottom margin.
+            width (int, optional): The width of the base screen. Defaults to 10.
+            title (str, optional): The title of the base screen. Defaults to None.
+
+        Returns:
+            None
+        """
         super().__init__(parent)
 
         main_sizer = wx.BoxSizer(wx.VERTICAL)

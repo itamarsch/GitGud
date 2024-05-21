@@ -15,6 +15,20 @@ class IssueEditor(BaseScreen):
         connection_token: str,
         repo: str,
     ):
+        """
+        Initializes a new instance of the IssueEditor class.
+
+        Args:
+            parent (MainFrame): The parent frame of the IssueEditor.
+            initial_issue (Optional[Issue]): An optional Issue object representing the initial issue.
+            connection_token (str): A string representing the connection token.
+            repo (str): A string representing the repository.
+
+        Initializes the IssueEditor with the given parent frame, initial issue, connection token, and repository.
+        Sets the initial_issue, connection_token, and repo attributes.
+        Calls the parent class's __init__ method with the provided parameters and title "Issue".
+
+        """
         self.initial_issue = initial_issue
         self.connection_token = connection_token
         self.repo = repo

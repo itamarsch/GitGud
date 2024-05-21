@@ -10,6 +10,16 @@ from main import MainFrame
 
 class RepoCreate(BaseScreen):
     def __init__(self, parent: MainFrame, connection_token: str):
+        """
+        Initializes a new instance of the RepoCreate class.
+
+        Args:
+            parent (MainFrame): The parent frame of the RepoCreate.
+            connection_token (str): The connection token for the RepoCreate.
+
+        Returns:
+            None
+        """
         self.connection_token = connection_token
         super().__init__(parent, 1, 3, 1, title="Create Repo")
 

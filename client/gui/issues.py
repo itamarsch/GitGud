@@ -14,6 +14,19 @@ from main import MainFrame
 
 class Issues(BaseScreen):
     def __init__(self, parent: MainFrame, repo: str, connection_token: str):
+        """
+        Initializes a new instance of the Issues class.
+
+        Args:
+            parent (MainFrame): The parent frame of the Issues.
+            repo (str): The repository name.
+            connection_token (str): The connection token for the Issues.
+
+        Initializes the Issues with the given parent frame, repository name, and connection token.
+        Sets the issues attribute to an empty list.
+        Calls the parent class's __init__ method with the provided parameters.
+
+        """
         self.repo = repo
         self.connection_token = connection_token
 
@@ -46,6 +59,15 @@ class Issues(BaseScreen):
         main_sizer.Add(self.issues_list, 15, wx.CENTER | wx.EXPAND)
 
     def on_right_click(self, event):
+        """
+        Handle the right-click event on the issues list.
+
+        Args:
+            event (wx.MouseEvent): The right-click event.
+
+        Returns:
+            None
+        """
         # Get the index of the item right-clicked
         index = self.issues_list.HitTest(event.GetPosition())
         if index != wx.NOT_FOUND:
@@ -127,6 +149,15 @@ class Issues(BaseScreen):
 
 
 def issue_as_str(issues: List[Issue]) -> List[str]:
+    """
+    Convert a list of issues into a list of strings representing each issue's title and username.
+
+    Args:
+        issues (List[Issue]): A list of issues.
+
+    Returns:
+        List[str]: A list of strings representing each issue's title and username.
+    """
     issue_as_str: Callable[[Issue], str] = (
         lambda issue: f"{issue['title']}\n{issue['username']}"
     )

@@ -44,6 +44,15 @@ from ssh_validation import validate_pubkey
 
 class ServerLogic:
     def __init__(self, port: int):
+        """
+        Initializes a new instance of the ServerLogic class.
+
+        Parameters:
+            port (int): The port number to listen on.
+
+        Returns:
+            None
+        """
         self.port = port
         self.queue: Queue[Tuple[str, Address]] = Queue()
         # Connection Token -> Username

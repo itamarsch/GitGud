@@ -14,23 +14,83 @@ file_length_size = 9
 
 
 def decompress_bytes_to_str(data: bytes) -> str:
+    """
+    Decompresses a byte string using the gzip algorithm and returns the decompressed string.
+
+    Parameters:
+        data (bytes): The byte string to be decompressed.
+
+    Returns:
+        str: The decompressed string.
+
+    Raises:
+        ValueError: If the input data is not in a valid gzip format.
+    """
     return compress.decompress_bytes_to_str(compress.Algorithm.gzip, data)
 
 
 def decompress_bytes_to_bytes(data: bytes) -> bytes:
+    """
+    Decompresses a byte string using the gzip algorithm and returns the decompressed bytes.
+
+    Parameters:
+        data (bytes): The byte string to be decompressed.
+
+    Returns:
+        bytes: The decompressed bytes.
+
+    Raises:
+        ValueError: If the input data is not in a valid gzip format.
+    """
     return compress.decompress_bytes_to_bytes(compress.Algorithm.gzip, data)
 
 
 def compress_str(data: str) -> bytes:
+    """
+    Compresses a string using the gzip algorithm and returns the compressed bytes.
+
+    Parameters:
+        data (str): The string to be compressed.
+
+    Returns:
+        bytes: The compressed bytes.
+
+    Raises:
+        ValueError: If the input data is not a valid string.
+    """
     return compress.compress_str_to_bytes(compress.Algorithm.gzip, data)
 
 
 def recv(soc: socket.socket, length_size: int) -> bytes:
+    """
+    Receives data from a socket based on the length provided and returns the received data.
+
+    Parameters:
+        soc (socket.socket): The socket from which to receive data.
+        length_size (int): The size of the length prefix.
+
+    Returns:
+        bytes: The received data.
+    """
     length_of_data = int(soc.recv(length_size).decode())
     return soc.recv(length_of_data)
 
 
 def recv_file(soc: socket.socket, length_size: int) -> bytes:
+    """
+    Receives a file from a socket connection.
+
+    Args:
+        soc (socket.socket): The socket object representing the connection.
+        length_size (int): The size of the length prefix of the file.
+
+    Returns:
+        bytes: The received file data.
+
+    Raises:
+        ValueError: If the received length prefix is not a valid integer.
+        ConnectionError: If the connection is closed before receiving the entire file.
+    """
     length_of_data = int(soc.recv(length_size).decode())
     data = bytes()
     while length_of_data > 0:
@@ -41,12 +101,32 @@ def recv_file(soc: socket.socket, length_size: int) -> bytes:
 
 
 def send(soc: socket.socket, data: bytes, length_size: int):
+    """
+    Sends data over a socket connection by first sending the length of the data as a prefix.
+
+    Parameters:
+        soc (socket.socket): The socket object representing the connection.
+        data (bytes): The data to be sent.
+        length_size (int): The size of the length prefix.
+
+    Returns:
+        None
+    """
     length_bytes = str(len(data)).zfill(length_size).encode()
     soc.send(length_bytes + data)
 
 
 class ClientComm:
     def __init__(self, addr: Tuple[str, int]) -> None:
+        """
+        Initializes a new instance of the class.
+
+        Args:
+            addr (Tuple[str, int]): The IP address and port number of the server.
+
+        Returns:
+            None
+        """
         self.ip = addr
 
     def _exchange_keys(self, soc: socket.socket) -> EncryptionState:

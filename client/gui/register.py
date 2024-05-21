@@ -15,6 +15,16 @@ from gui_run_request import gui_run_request
 
 class RegisterPanel(BaseScreen):
     def __init__(self, parent: MainFrame):
+        """
+        Initializes a new instance of the RegisterPanel class.
+
+        Args:
+            parent (MainFrame): The parent frame of the RegisterPanel.
+
+        Initializes the RegisterPanel with the given parent frame.
+        Calls the parent class's __init__ method with the provided parameters.
+
+        """
 
         super().__init__(parent, 1, 3, 1, title="Register")
 
@@ -71,6 +81,16 @@ class RegisterPanel(BaseScreen):
         main_sizer.Add(login_button, 0, wx.CENTER | wx.EXPAND)
 
     def on_ssh_help(self, _):
+        """
+        Callback function to handle the registration process. Retrieves user input, sends a registration request,
+        and processes the result to obtain a connection token for further interaction with the application.
+
+        Parameters:
+            _ (Any): Unused parameter.
+
+        Returns:
+            None
+        """
         self.GetParent().push_screen(lambda: SSHHelp(self.GetParent()))
 
     def on_register(self, _):
@@ -90,6 +110,20 @@ class RegisterPanel(BaseScreen):
         gui_run_request(self, pack_register(username, password, ssh_key), on_finished)
 
     def on_login(self, _):
+        """
+        Switches the current screen to the login panel.
+
+        This function is called when the user clicks the "Login" button in the register panel.
+        It imports the LoginPanel class from the gui.login_panel module and creates an instance of it
+        with the parent frame of the register panel. Then, it calls the change_screen method of the parent
+        frame to switch to the login panel.
+
+        Parameters:
+            _ (Any): This parameter is not used in the function.
+
+        Returns:
+            None
+        """
         from gui.login_panel import LoginPanel
 
         self.GetParent().change_screen(lambda: LoginPanel(self.GetParent()))

@@ -7,6 +7,16 @@ from main import MainFrame
 
 class IssueViewer(BaseScreen):
     def __init__(self, parent: MainFrame, issue: Issue):
+        """
+        Initializes a new instance of the IssueViewer class.
+
+        Args:
+            parent (MainFrame): The parent frame of the IssueViewer.
+            issue (Issue): The issue to be displayed.
+
+        Returns:
+            None
+        """
         self.issue = issue
         super().__init__(parent, 2, 1, title=self.issue["title"])
 

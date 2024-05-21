@@ -12,6 +12,23 @@ else:
 class MainFrame(wx.Frame):
 
     def __init__(self, client_com: ClientComm, connection_token: Optional[str]):
+        """
+        Initializes a new instance of the MainFrame class.
+
+        Args:
+            client_com (ClientComm): An instance of the ClientComm class representing the client communication.
+            connection_token (Optional[str]): An optional string representing the connection token.
+
+        Returns:
+            None
+
+        This method initializes a new instance of the MainFrame class. It sets the title of the frame to "GitGud".
+        It sets the client_com attribute to the provided client_com instance. It initializes an empty list for the
+        screens attribute. It creates a vertical BoxSizer and sets it as the sizer for the frame. If a connection_token
+        is provided, it imports the RepoScreen class from the gui.repo_screen module and pushes a new RepoScreen instance
+        onto the screens list. Otherwise, it imports the RegisterPanel class from the gui.register module and pushes a
+        new RegisterPanel instance onto the screens list. The frame is then maximized and shown.
+        """
         super().__init__(None, title="GitGud")
 
         self.client_com = client_com

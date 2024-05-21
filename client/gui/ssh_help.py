@@ -6,6 +6,16 @@ import wx
 
 class CodeBlock(wx.StaticText):
     def __init__(self, parent, label):
+        """
+        Initializes a new instance of the `CodeBlock` class.
+
+        Parameters:
+            parent (wx.Window): The parent window of the `CodeBlock`.
+            label (str): The label text to be displayed in the `CodeBlock`.
+
+        Returns:
+            None
+        """
         super().__init__(parent, label=label, style=wx.TE_MULTILINE | wx.TE_READONLY)
         font = wx.Font(
             16, wx.FONTFAMILY_TELETYPE, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
@@ -19,9 +29,27 @@ class CodeBlock(wx.StaticText):
 
 class SSHHelp(BaseScreen):
     def __init__(self, parent):
+        """
+        Initializes a new instance of the SSHHelp class.
+
+        Parameters:
+            parent (wx.Window): The parent window of the SSHHelp instance.
+
+        Returns:
+            None
+        """
         super().__init__(parent, 3, 3, title="SSH Help")
 
     def text_explanation(self, text: str) -> List[wx.StaticText]:
+        """
+        Generates a list of wx.StaticText objects based on the provided text.
+
+        Parameters:
+            text (str): The text to be split into lines and converted into wx.StaticText objects.
+
+        Returns:
+            List[wx.StaticText]: A list of wx.StaticText objects generated from the text.
+        """
         font = wx.Font(
             20, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_NORMAL
         )

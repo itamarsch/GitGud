@@ -6,10 +6,39 @@ conf_file_path = "conf/gitolite.conf"
 
 class GitManager:
     def __init__(self, path: str) -> None:
+        """
+        Initializes a new instance of the GitManager class.
+
+        Args:
+            path (str): The path to the gitolite-admin repository
+
+        Returns:
+            None
+        """
         self.repo = git.Repo(path)
         self.path = path
 
     def _commit_changes(self, commit_message: str, files_to_commit: typing.List[str]):
+        """
+        Commits the changes made to the repository.
+
+        Args:
+            commit_message (str): The message to be included in the commit.
+            files_to_commit (List[str]): A list of file paths to be committed.
+
+        Returns:
+            None
+
+        This function adds the specified files to the staging area of the repository,
+        creates a new commit with the given commit message, and pushes the commit to
+        the remote repository.
+
+        Note:
+            - The function assumes that the repository has a remote named "origin".
+            - The function does not handle any exceptions that may occur during the
+              commit or push process.
+
+        """
         self.repo.index.add(files_to_commit)
         self.repo.git.commit(
             "-m",

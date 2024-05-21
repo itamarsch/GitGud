@@ -15,14 +15,47 @@ file_length_size = 9
 
 
 def decompress_bytes(data: bytes) -> str:
+    """
+    Decompresses a byte string using the gzip algorithm and returns the decompressed string.
+
+    Parameters:
+        data (bytes): The byte string to be decompressed.
+
+    Returns:
+        str: The decompressed string.
+
+    Raises:
+        ValueError: If the input data is not in a valid gzip format.
+    """
     return compress.decompress_bytes_to_str(compress.Algorithm.gzip, data)
 
 
 def compress_str(data: str) -> bytes:
+    """
+    Compresses a string using the gzip algorithm and returns the compressed bytes.
+
+    Parameters:
+        data (str): The string to be compressed.
+
+    Returns:
+        bytes: The compressed bytes.
+
+    Raises:
+        ValueError: If the input data is not a valid string.
+    """
     return compress.compress_str_to_bytes(compress.Algorithm.gzip, data)
 
 
 def compress_bytes(data: bytes) -> bytes:
+    """
+    Compresses a byte string using the gzip algorithm and returns the compressed bytes.
+
+    Parameters:
+        data (bytes): The byte string to be compressed.
+
+    Returns:
+        bytes: The compressed bytes.
+    """
     return compress.compress_bytes_to_bytes(compress.Algorithm.gzip, data)
 
 
@@ -58,12 +91,33 @@ def send(soc: socket.socket, data: bytes, length_size: int):
 
 class FileComm:
     def __init__(self, data: bytes, token: str):
+        """
+        Initializes a new instance of the FileComm class.
+
+        Parameters:
+            data (bytes): The data to be stored in the FileComm object.
+            token (str): The token to be stored in the FileComm object.
+
+        Returns:
+            None
+        """
         self.data = data
         self.token = token
         self.running = False
         self.start_listeneing()
 
     def start_listeneing(self):
+        """
+        Start listening for incoming connections in a separate thread.
+
+        This method creates a new thread and assigns the `_listen` method as the target for that thread. The `_listen` method is responsible for listening for incoming connections and handling them.
+
+        Parameters:
+            None
+
+        Returns:
+            None
+        """
         thread = Thread(target=self._listen)
         thread.start()
 
@@ -112,6 +166,15 @@ class FileComm:
 
 class ServerComm:
     def __init__(self, queue: Queue[Tuple[str, Address]]) -> None:
+        """
+        Initializes a new instance of the ServerComm class.
+
+        Parameters:
+            queue (Queue[Tuple[str, Address]]): The queue for handling incoming requests.
+
+        Returns:
+            None
+        """
         self.server_socket = socket.socket()
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.open_sockets: Dict[Address, Tuple[socket.socket, EncryptionState]] = {}
@@ -148,6 +211,15 @@ class ServerComm:
             self._read_sockets(rlist)
 
     def _disconnect_client(self, addr: Address):
+        """
+        Disconnects a client from the server by removing its socket from the `open_sockets` dictionary and closing the socket.
+
+        Parameters:
+            addr (Address): The address of the client to disconnect.
+
+        Returns:
+            None
+        """
         if addr in self.open_sockets:
             soc = self.open_sockets[addr]
             del self.open_sockets[addr]
@@ -257,6 +329,17 @@ class ServerComm:
             return
 
     def start_listeneing(self, port: int):
+        """
+        Start listening for incoming connections in a separate thread.
+
+        This method creates a new thread and assigns the `_listen` method as the target for that thread. The `_listen` method is responsible for listening for incoming connections and handling them.
+
+        Parameters:
+            port (int): The port number to listen on.
+
+        Returns:
+            None
+        """
         self.running = True
         thread = Thread(target=self._listen, args=(port,))
         thread.start()

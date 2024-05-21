@@ -22,6 +22,18 @@ class PullRequestEditor(BaseScreen):
         connection_token: str,
         repo: str,
     ):
+        """
+        Initializes a new instance of the PullRequestEditor class.
+
+        Args:
+            parent (MainFrame): The parent frame of the PullRequestEditor.
+            initial_issue (Optional[PullRequest]): The initial pull request to edit, if any.
+            connection_token (str): The connection token for the PullRequestEditor.
+            repo (str): The repository name for the PullRequestEditor.
+
+        Returns:
+            None
+        """
         self.branches: List[str] = []
         self.initial_pr = initial_issue
         self.connection_token = connection_token

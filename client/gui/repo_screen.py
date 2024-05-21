@@ -24,6 +24,18 @@ branches_placeholder = "Select a branch"
 
 class RepoScreen(BaseScreen):
     def __init__(self, parent: MainFrame, connection_token: str):
+        """
+        Initializes a new instance of the RepoScreen class.
+
+        Args:
+            parent (MainFrame): The parent frame of the RepoScreen.
+            connection_token (str): The connection token for the RepoScreen.
+
+        Initializes the RepoScreen with the given parent frame and connection token.
+        Sets the directory, branch, and repo attributes to empty strings.
+        Calls the parent class's __init__ method with the provided parameters.
+
+        """
         self.connection_token = connection_token
         self.directory = ""
         self.branch = ""

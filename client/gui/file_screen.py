@@ -30,6 +30,17 @@ class NoopLexer(RegexLexer):
 
 class FileContent(BaseScreen):
     def __init__(self, parent: MainFrame, file_content: str, file_name: str):
+        """
+        Initializes a new instance of the FileContent class.
+
+        Args:
+            parent (MainFrame): The parent frame of the FileContent.
+            file_content (str): The content of the file.
+            file_name (str): The name of the file.
+
+        Returns:
+            None
+        """
         self.file_content = file_content
         self.file_name = file_name
         super().__init__(parent, 0, 0)
