@@ -185,6 +185,6 @@ def pr_as_str(prs: List[PullRequest]) -> List[str]:
 
     """
     pr_as_str: Callable[[PullRequest], str] = (
-        lambda pr: f"{pr['title']}\n{pr['username']}\n{pr['fromBranch']} -> {pr['intoBranch']}"
+        lambda pr: f"{pr['title']}. {pr['username']}. {pr['fromBranch']} -> {pr['intoBranch']}"
     )
     return list(map(pr_as_str, prs))

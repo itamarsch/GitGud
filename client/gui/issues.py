@@ -76,8 +76,8 @@ class Issues(BaseScreen):
 
     def create_popup_menu(self, _):
         """
-        Create a popup menu with options for Delete, View, and Edit. 
-        Bind event handlers for each option to corresponding methods. 
+        Create a popup menu with options for Delete, View, and Edit.
+        Bind event handlers for each option to corresponding methods.
         Display the menu and destroy it after it's used.
         """
         menu = wx.Menu()
@@ -93,7 +93,7 @@ class Issues(BaseScreen):
 
     def on_deleted(self, _):
         """
-        A function that handles when an item is deleted. 
+        A function that handles when an item is deleted.
         It retrieves the index of the selected issue, gets the corresponding issue ID. It then initiates the deletion request and calls the function to request updated issues.
         """
         issue_index = self.issues_list.GetSelection()
@@ -108,7 +108,7 @@ class Issues(BaseScreen):
 
     def on_issue_view(self, _):
         """
-        A function that handles the action when an issue is viewed. 
+        A function that handles the action when an issue is viewed.
         It retrieves the selected issue from a list, then pushes a screen to view the selected issue.
         """
         issue_index = self.issues_list.GetSelection()
@@ -135,6 +135,7 @@ class Issues(BaseScreen):
         """
         Generate a request for issues and update the GUI with the retrieved information.
         """
+
         def on_finished(result: Json):
             issues = cast(List[Issue], result["issues"])
             self.issues = issues
@@ -159,6 +160,6 @@ def issue_as_str(issues: List[Issue]) -> List[str]:
         List[str]: A list of strings representing each issue's title and username.
     """
     issue_as_str: Callable[[Issue], str] = (
-        lambda issue: f"{issue['title']}\n{issue['username']}"
+        lambda issue: f"{issue['title']}. {issue['username']}"
     )
     return list(map(issue_as_str, issues))

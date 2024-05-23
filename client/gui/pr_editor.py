@@ -57,10 +57,10 @@ class PullRequestEditor(BaseScreen):
         self.title_field.SetFont(title_font)
         self.title_field.SetHint("Title")
 
-        self.from_branches = wx.ComboBox(self, choices=[], style=wx.CB_READONLY)
+        self.from_branches = wx.ComboBox(self, choices=[])
         self.from_branches.SetHint("From branch")
 
-        self.into_branches = wx.ComboBox(self, choices=[], style=wx.CB_READONLY)
+        self.into_branches = wx.ComboBox(self, choices=[])
         self.into_branches.SetHint("Into branch")
 
         main_sizer.Add(text_field_sizer, 0, wx.CENTER | wx.EXPAND)
@@ -116,7 +116,7 @@ class PullRequestEditor(BaseScreen):
 
     def on_submit(self, _):
         """
-        A function that handles form submission. Retrieves title and branch selections, then either updates an existing pull request or creates a new one based on the initial_pr. 
+        A function that handles form submission. Retrieves title and branch selections, then either updates an existing pull request or creates a new one based on the initial_pr.
         """
         title = self.title_field.GetValue()
         if not self.branches:
