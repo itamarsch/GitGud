@@ -12,6 +12,7 @@ def repo_clone(repo_name: str, branch: str = "") -> Repo:
         if branch:
             repo.git.checkout(branch)
         repo.remotes.origin.pull(branch if branch else "main")
+        repo.remotes.origin.fetch()
 
         return repo
     else:
